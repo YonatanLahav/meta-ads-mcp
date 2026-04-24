@@ -1,6 +1,6 @@
 from mcp.types import Tool, TextContent
 
-from src.tools.helpers import success_response
+from src.tools.helpers import success_response, extract_args
 
 
 def get_campaign_tool_defs() -> list[Tool]:
@@ -108,15 +108,13 @@ async def _get_campaign(service, args: dict) -> list[TextContent]:
 
 
 async def _create_campaign(service, args: dict) -> list[TextContent]:
-    data = {k: v for k, v in args.items() if k != "account_id"}
-    campaign = await service.create_campaign(args["account_id"], data)
+    campaign = await service.create_campaign(args["account_id"], extract_args(args, ["account_id"]))
     return success_response("Campaign created", {"campaign": campaign})
 
 
 async def _update_campaign(service, args: dict) -> list[TextContent]:
     campaign_id = args["campaign_id"]
-    update_data = {k: v for k, v in args.items() if k != "campaign_id"}
-    await service.update_campaign(campaign_id, update_data)
+    await service.update_campaign(campaign_id, extract_args(args, ["campaign_id"]))
     return success_response("Campaign updated", {"campaign_id": campaign_id, "updated": True})
 
 

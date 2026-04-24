@@ -48,12 +48,11 @@ def main():
         print("Authentication failed.")
         sys.exit(1)
 
-    user = validate_token(token, api_version)
-    if user:
-        print(f"Authenticated as: {user.get('name', 'Unknown')} (ID: {user.get('id')})")
+    if not validate_token(token, api_version):
+        print("Warning: token was obtained but could not be verified.")
 
     save_token_to_env(token)
-    print(f"Long-lived token saved to .env")
+    print("Long-lived token saved to .env")
     print("This token is valid for 60 days.")
     print("The server will refresh it automatically on startup.")
 

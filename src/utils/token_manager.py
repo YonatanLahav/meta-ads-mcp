@@ -1,6 +1,8 @@
+import html
 import http.server
 import json
 import os
+import stat
 import sys
 import threading
 import urllib.parse
@@ -16,28 +18,39 @@ SCOPES = "ads_management,ads_read,business_management"
 OAUTH_TIMEOUT = 120
 
 
+def _graph_get(url: str, access_token: str) -> dict:
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {access_token}"})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read())
+
+
+def _graph_post(url: str, params: dict) -> dict:
+    data = urllib.parse.urlencode(params).encode()
+    req = urllib.request.Request(url, data=data, method="POST")
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read())
+
+
 def validate_token(access_token: str, api_version: str) -> dict | None:
-    url = f"https://graph.facebook.com/{api_version}/me?access_token={urllib.parse.quote(access_token)}"
     try:
-        with urllib.request.urlopen(url, timeout=10) as resp:
-            return json.loads(resp.read())
+        return _graph_get(f"https://graph.facebook.com/{api_version}/me", access_token)
     except Exception as e:
         logger.warning(f"Token validation failed: {e}")
         return None
 
 
 def refresh_token(access_token: str, app_id: str, app_secret: str, api_version: str) -> str | None:
-    params = urllib.parse.urlencode({
-        "grant_type": "fb_exchange_token",
-        "client_id": app_id,
-        "client_secret": app_secret,
-        "fb_exchange_token": access_token,
-    })
-    url = f"https://graph.facebook.com/{api_version}/oauth/access_token?{params}"
     try:
-        with urllib.request.urlopen(url, timeout=10) as resp:
-            data = json.loads(resp.read())
-            return data.get("access_token")
+        data = _graph_post(
+            f"https://graph.facebook.com/{api_version}/oauth/access_token",
+            {
+                "grant_type": "fb_exchange_token",
+                "client_id": app_id,
+                "client_secret": app_secret,
+                "fb_exchange_token": access_token,
+            },
+        )
+        return data.get("access_token")
     except Exception as e:
         logger.warning(f"Token refresh failed: {e}")
         return None
@@ -60,6 +73,12 @@ def save_token_to_env(token: str):
 
     ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
     ENV_PATH.write_text("\n".join(lines) + "\n")
+    os.chmod(ENV_PATH, stat.S_IRUSR | stat.S_IWUSR)
+
+
+def _persist_token(token: str):
+    save_token_to_env(token)
+    os.environ["META_ACCESS_TOKEN"] = token
 
 
 class _CallbackHandler(http.server.BaseHTTPRequestHandler):
@@ -85,7 +104,8 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
             self.send_response(400)
             self.send_header("Content-Type", "text/html")
             self.end_headers()
-            self.wfile.write(f"<html><body><h2>Error: {_CallbackHandler.error}</h2></body></html>".encode())
+            safe_error = html.escape(_CallbackHandler.error)
+            self.wfile.write(f"<html><body><h2>Authentication failed: {safe_error}</h2></body></html>".encode())
         else:
             self.send_response(404)
             self.end_headers()
@@ -97,28 +117,28 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
 
 
 def _exchange_code_for_token(app_id: str, app_secret: str, code: str, api_version: str) -> str:
-    params = urllib.parse.urlencode({
-        "client_id": app_id,
-        "client_secret": app_secret,
-        "redirect_uri": REDIRECT_URI,
-        "code": code,
-    })
-    url = f"https://graph.facebook.com/{api_version}/oauth/access_token?{params}"
-    with urllib.request.urlopen(url, timeout=10) as resp:
-        data = json.loads(resp.read())
+    data = _graph_post(
+        f"https://graph.facebook.com/{api_version}/oauth/access_token",
+        {
+            "client_id": app_id,
+            "client_secret": app_secret,
+            "redirect_uri": REDIRECT_URI,
+            "code": code,
+        },
+    )
     return data["access_token"]
 
 
 def _exchange_for_long_lived_token(app_id: str, app_secret: str, short_token: str, api_version: str) -> str:
-    params = urllib.parse.urlencode({
-        "grant_type": "fb_exchange_token",
-        "client_id": app_id,
-        "client_secret": app_secret,
-        "fb_exchange_token": short_token,
-    })
-    url = f"https://graph.facebook.com/{api_version}/oauth/access_token?{params}"
-    with urllib.request.urlopen(url, timeout=10) as resp:
-        data = json.loads(resp.read())
+    data = _graph_post(
+        f"https://graph.facebook.com/{api_version}/oauth/access_token",
+        {
+            "grant_type": "fb_exchange_token",
+            "client_id": app_id,
+            "client_secret": app_secret,
+            "fb_exchange_token": short_token,
+        },
+    )
     return data["access_token"]
 
 
@@ -128,7 +148,7 @@ def run_oauth_flow(app_id: str, app_secret: str, api_version: str) -> str | None
 
     auth_url = (
         f"https://www.facebook.com/{api_version}/dialog/oauth?"
-        f"client_id={app_id}"
+        f"client_id={urllib.parse.quote(app_id)}"
         f"&redirect_uri={urllib.parse.quote(REDIRECT_URI)}"
         f"&scope={SCOPES}"
         f"&response_type=code"
@@ -142,7 +162,7 @@ def run_oauth_flow(app_id: str, app_secret: str, api_version: str) -> str | None
         return None
 
     logger.info("Opening browser for Meta OAuth authentication...")
-    print(f"Opening browser for authentication...", file=sys.stderr)
+    print("Opening browser for authentication...", file=sys.stderr)
     print(f"If browser doesn't open, visit: {auth_url}", file=sys.stderr)
 
     webbrowser.open(auth_url)
@@ -150,7 +170,7 @@ def run_oauth_flow(app_id: str, app_secret: str, api_version: str) -> str | None
     server.server_close()
 
     if _CallbackHandler.error:
-        logger.error(f"OAuth failed: {_CallbackHandler.error}")
+        logger.error("OAuth authentication failed")
         return None
 
     if not _CallbackHandler.auth_code:
@@ -167,18 +187,15 @@ def run_oauth_flow(app_id: str, app_secret: str, api_version: str) -> str | None
 
 
 def ensure_valid_token(access_token: str, app_id: str | None, app_secret: str | None, api_version: str) -> str | None:
-    # Step 1: Check if current token works
     user = validate_token(access_token, api_version)
 
     if user:
-        logger.info(f"Token valid for user: {user.get('name', 'Unknown')}")
+        logger.info("Token validated successfully")
 
-        # Step 2: Silently refresh for another 60 days if possible
         if app_id and app_secret:
             new_token = refresh_token(access_token, app_id, app_secret, api_version)
             if new_token and new_token != access_token:
-                save_token_to_env(new_token)
-                os.environ["META_ACCESS_TOKEN"] = new_token
+                _persist_token(new_token)
                 logger.info("Token refreshed for another 60 days")
                 return new_token
 
@@ -186,27 +203,21 @@ def ensure_valid_token(access_token: str, app_id: str | None, app_secret: str | 
 
     logger.warning("Token is invalid or expired")
 
-    # Step 3: Try silent refresh with expired token
     if app_id and app_secret:
         new_token = refresh_token(access_token, app_id, app_secret, api_version)
         if new_token:
-            verify = validate_token(new_token, api_version)
-            if verify:
-                save_token_to_env(new_token)
-                os.environ["META_ACCESS_TOKEN"] = new_token
-                logger.info(f"Token recovered for user: {verify.get('name', 'Unknown')}")
+            if validate_token(new_token, api_version):
+                _persist_token(new_token)
+                logger.info("Token recovered via silent refresh")
                 return new_token
 
-    # Step 4: Full OAuth browser flow as last resort
     if app_id and app_secret:
         logger.info("Attempting OAuth browser flow...")
         new_token = run_oauth_flow(app_id, app_secret, api_version)
         if new_token:
-            verify = validate_token(new_token, api_version)
-            if verify:
-                save_token_to_env(new_token)
-                os.environ["META_ACCESS_TOKEN"] = new_token
-                logger.info(f"Authenticated via OAuth as: {verify.get('name', 'Unknown')}")
+            if validate_token(new_token, api_version):
+                _persist_token(new_token)
+                logger.info("Authenticated via OAuth")
                 return new_token
 
     logger.error("Authentication failed. Ensure META_APP_ID and META_APP_SECRET are set in .env")

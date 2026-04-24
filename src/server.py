@@ -25,6 +25,7 @@ from src.tools.campaign import (
     _update_campaign,
     _delete_campaign,
 )
+from src.utils.error_handler import handle_meta_api_error
 from src.utils.logger import logger
 from src.utils.token_manager import ensure_valid_token
 
@@ -100,7 +101,6 @@ def create_server() -> Server:
         try:
             return await handler(arguments)
         except Exception as e:
-            from src.utils.error_handler import handle_meta_api_error
             meta_error = handle_meta_api_error(e)
             return [TextContent(type="text", text=json.dumps(meta_error.to_dict(), indent=2))]
 

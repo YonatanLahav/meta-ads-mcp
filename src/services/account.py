@@ -17,12 +17,12 @@ DEFAULT_FIELDS = [
 
 
 class AccountService(MetaAdsService):
-    async def get_ad_accounts(self, limit: int = 100) -> list:
+    async def get_ad_accounts(self, limit: int = 100) -> list[dict]:
         async def _op():
             me = User(fbid="me")
             cursor = me.get_ad_accounts(fields=DEFAULT_FIELDS, params={"limit": limit})
             results = await self.paginate_with_limit(cursor, limit)
-            logger.info(f"Fetched {len(results)} ad accounts")
+            logger.debug(f"Fetched {len(results)} ad accounts")
             return [dict(a) for a in results]
 
         return await self._execute(_op)

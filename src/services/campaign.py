@@ -22,7 +22,7 @@ class CampaignService(MetaAdsService):
         account_id: str,
         limit: int = 100,
         filtering: list[dict] | None = None,
-    ) -> list:
+    ) -> list[dict]:
         async def _op():
             account = AdAccount(self.normalize_account_id(account_id))
             params = {"limit": limit}
@@ -30,7 +30,7 @@ class CampaignService(MetaAdsService):
                 params["filtering"] = filtering
             cursor = account.get_campaigns(fields=DEFAULT_FIELDS, params=params)
             results = await self.paginate_with_limit(cursor, limit)
-            logger.info(f"Fetched {len(results)} campaigns for {account_id}")
+            logger.debug(f"Fetched {len(results)} campaigns for account {account_id}")
             return [dict(c) for c in results]
 
         return await self._execute(_op)
@@ -38,8 +38,7 @@ class CampaignService(MetaAdsService):
     async def get_campaign(self, campaign_id: str) -> dict:
         async def _op():
             campaign = Campaign(campaign_id)
-            result = campaign.api_get(fields=DEFAULT_FIELDS)
-            return dict(result)
+            return dict(campaign.api_get(fields=DEFAULT_FIELDS))
 
         return await self._execute(_op)
 
@@ -47,7 +46,7 @@ class CampaignService(MetaAdsService):
         async def _op():
             account = AdAccount(self.normalize_account_id(account_id))
             result = account.create_campaign(params=data)
-            logger.info(f"Campaign created: {result.get('id')}")
+            logger.debug(f"Campaign created: {result.get('id')}")
             return dict(result)
 
         return await self._execute(_op)
@@ -56,7 +55,7 @@ class CampaignService(MetaAdsService):
         async def _op():
             campaign = Campaign(campaign_id)
             campaign.api_update(params=updates)
-            logger.info(f"Campaign updated: {campaign_id}")
+            logger.debug(f"Campaign updated: {campaign_id}")
             return {"id": campaign_id, "updated": True}
 
         return await self._execute(_op)
@@ -65,7 +64,7 @@ class CampaignService(MetaAdsService):
         async def _op():
             campaign = Campaign(campaign_id)
             campaign.api_delete()
-            logger.info(f"Campaign deleted: {campaign_id}")
+            logger.debug(f"Campaign deleted: {campaign_id}")
             return {"id": campaign_id, "deleted": True}
 
         return await self._execute(_op)

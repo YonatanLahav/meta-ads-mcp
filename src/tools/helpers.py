@@ -8,3 +8,7 @@ def success_response(message: str, data: dict) -> list[TextContent]:
         "message": message,
         "data": data,
     }, indent=2))]
+
+
+def extract_args(args: dict, exclude: list[str]) -> dict:
+    return {k: v for k, v in args.items() if k not in exclude}

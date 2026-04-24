@@ -1,6 +1,7 @@
 from src.utils.logger import logger
 
-RETRIABLE_ERROR_CODES = {4, 17, 80004, 613, 429, 500, 502, 503, 504}
+RETRIABLE_ERROR_CODES = {4, 17, 80004, 613}
+RETRIABLE_HTTP_STATUSES = {429, 500, 502, 503, 504}
 
 ERROR_CODE_MESSAGES: dict[int, str] = {
     1: "An unknown error occurred",
@@ -27,21 +28,19 @@ class MetaAdsError(Exception):
         error_type: str = "API_ERROR",
         status_code: int = 500,
         fbtrace_id: str | None = None,
-        subcode: int | None = None,
     ):
         super().__init__(message)
         self.code = code
         self.error_type = error_type
         self.status_code = status_code
         self.fbtrace_id = fbtrace_id
-        self.subcode = subcode
 
     @property
     def is_retriable(self) -> bool:
         code = int(self.code) if str(self.code).isdigit() else -1
         if code in RETRIABLE_ERROR_CODES:
             return True
-        if self.status_code in {429, 500, 502, 503, 504}:
+        if self.status_code in RETRIABLE_HTTP_STATUSES:
             return True
         return False
 
@@ -66,7 +65,6 @@ def handle_meta_api_error(error: Exception) -> MetaAdsError:
     error_type = "API_ERROR"
     status_code = 500
     fbtrace_id = None
-    subcode = None
 
     try:
         body = getattr(error, "body", None) or {}
@@ -77,14 +75,13 @@ def handle_meta_api_error(error: Exception) -> MetaAdsError:
             code = api_error.get("code", code)
             error_type = api_error.get("type", error_type)
             fbtrace_id = api_error.get("fbtrace_id")
-            subcode = api_error.get("error_subcode")
             status_code = getattr(error, "http_status", status_code)
         elif hasattr(error, "message"):
             message = error.message
     except Exception as parse_err:
         logger.error(f"Failed to parse Meta API error: {parse_err}")
 
-    return MetaAdsError(message, code, error_type, status_code, fbtrace_id, subcode)
+    return MetaAdsError(message, code, error_type, status_code, fbtrace_id)
 
 
 def is_retriable_error(error: Exception) -> bool:
@@ -95,7 +92,7 @@ def is_retriable_error(error: Exception) -> bool:
         return True
     status = getattr(error, "http_status", None) or getattr(error, "status_code", None)
     try:
-        if status and int(status) in {429, 500, 502, 503, 504}:
+        if status and int(status) in RETRIABLE_HTTP_STATUSES:
             return True
     except (ValueError, TypeError):
         pass

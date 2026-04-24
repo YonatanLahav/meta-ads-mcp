@@ -26,7 +26,7 @@ class MetaAdsService:
     def normalize_account_id(self, account_id: str) -> str:
         return account_id if account_id.startswith("act_") else f"act_{account_id}"
 
-    async def paginate_with_limit(self, cursor, max_results: int) -> list:
+    async def paginate_with_limit(self, cursor, max_results: int) -> list[dict]:
         def _sync():
             results = list(cursor)
             if len(results) >= max_results:
