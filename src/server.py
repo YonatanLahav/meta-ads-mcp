@@ -6,6 +6,7 @@ from mcp.server.stdio import stdio_server
 from mcp.types import TextContent
 
 from src.config.settings import load_meta_config
+from src.tools.account import get_account_tool_defs
 from src.tools.campaign import get_campaign_tool_defs
 from src.utils.logger import logger
 
@@ -18,7 +19,9 @@ def create_server() -> Server:
     tool_handlers: dict[str, any] = {}
 
     if meta_config:
+        from src.services.account import AccountService
         from src.services.campaign import CampaignService
+        from src.tools.account import _list_ad_accounts
         from src.tools.campaign import (
             _list_campaigns,
             _get_campaign,
@@ -27,11 +30,14 @@ def create_server() -> Server:
             _delete_campaign,
         )
 
+        account_service = AccountService(meta_config)
         campaign_service = CampaignService(meta_config)
 
+        all_tools.extend(get_account_tool_defs())
         all_tools.extend(get_campaign_tool_defs())
 
         tool_handlers.update({
+            "list_ad_accounts": lambda args: _list_ad_accounts(account_service, args),
             "list_campaigns": lambda args: _list_campaigns(campaign_service, args),
             "get_campaign": lambda args: _get_campaign(campaign_service, args),
             "create_campaign": lambda args: _create_campaign(campaign_service, args),
