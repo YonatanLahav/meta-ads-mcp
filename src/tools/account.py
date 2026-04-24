@@ -1,7 +1,6 @@
-import json
 from mcp.types import Tool, TextContent
 
-from src.services.account import AccountService
+from src.tools.helpers import success_response
 
 
 def get_account_tool_defs() -> list[Tool]:
@@ -19,10 +18,6 @@ def get_account_tool_defs() -> list[Tool]:
     ]
 
 
-async def _list_ad_accounts(service: AccountService, args: dict) -> list[TextContent]:
+async def _list_ad_accounts(service, args: dict) -> list[TextContent]:
     accounts = await service.get_ad_accounts(limit=args.get("limit", 100))
-    return [TextContent(type="text", text=json.dumps({
-        "success": True,
-        "message": f"Found {len(accounts)} ad accounts",
-        "data": {"count": len(accounts), "accounts": accounts},
-    }, indent=2))]
+    return success_response(f"Found {len(accounts)} ad accounts", {"count": len(accounts), "accounts": accounts})

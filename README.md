@@ -101,16 +101,20 @@ src/
 ├── config/
 │   └── settings.py        # Loads config from environment variables
 ├── types/
-│   └── config.py          # Pydantic models (MetaAdsConfig, ServerConfig)
+│   └── config.py          # Pydantic models (MetaAdsConfig)
 ├── services/
-│   ├── base.py            # Base service — SDK init, pagination helpers
+│   ├── base.py            # Base service — SDK init, pagination, retry wrapper
+│   ├── account.py         # Ad account operations
 │   └── campaign.py        # Campaign CRUD operations
 ├── tools/
+│   ├── helpers.py         # Shared response formatting
+│   ├── account.py         # Account tool definitions + handlers
 │   └── campaign.py        # Campaign tool definitions + handlers
 └── utils/
     ├── logger.py          # Structured JSON logging to stderr
     ├── error_handler.py   # Meta API error classification & mapping
-    └── retry.py           # Exponential backoff with jitter
+    ├── retry.py           # Exponential backoff with jitter
+    └── token_manager.py   # Token validation, refresh, and OAuth flow
 ```
 
 ## Architecture

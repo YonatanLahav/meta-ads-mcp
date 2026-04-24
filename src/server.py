@@ -6,6 +6,7 @@ except ImportError:
 
 import asyncio
 import json
+from functools import partial
 from typing import Any
 
 from mcp.server import Server
@@ -13,8 +14,17 @@ from mcp.server.stdio import stdio_server
 from mcp.types import TextContent
 
 from src.config.settings import load_meta_config
-from src.tools.account import get_account_tool_defs
-from src.tools.campaign import get_campaign_tool_defs
+from src.services.account import AccountService
+from src.services.campaign import CampaignService
+from src.tools.account import get_account_tool_defs, _list_ad_accounts
+from src.tools.campaign import (
+    get_campaign_tool_defs,
+    _list_campaigns,
+    _get_campaign,
+    _create_campaign,
+    _update_campaign,
+    _delete_campaign,
+)
 from src.utils.logger import logger
 from src.utils.token_manager import ensure_valid_token
 
@@ -23,7 +33,7 @@ def create_server() -> Server:
     server = Server("meta-ads-mcp-server")
     meta_config = load_meta_config()
 
-    all_tools = []
+    all_tools: list = []
     tool_handlers: dict[str, Any] = {}
     token_valid = False
 
@@ -41,17 +51,6 @@ def create_server() -> Server:
             logger.warning("Token invalid — tools will fail until a valid token is provided")
 
     if meta_config and token_valid:
-        from src.services.account import AccountService
-        from src.services.campaign import CampaignService
-        from src.tools.account import _list_ad_accounts
-        from src.tools.campaign import (
-            _list_campaigns,
-            _get_campaign,
-            _create_campaign,
-            _update_campaign,
-            _delete_campaign,
-        )
-
         account_service = AccountService(meta_config)
         campaign_service = CampaignService(meta_config)
 
@@ -59,12 +58,12 @@ def create_server() -> Server:
         all_tools.extend(get_campaign_tool_defs())
 
         tool_handlers.update({
-            "list_ad_accounts": lambda args: _list_ad_accounts(account_service, args),
-            "list_campaigns": lambda args: _list_campaigns(campaign_service, args),
-            "get_campaign": lambda args: _get_campaign(campaign_service, args),
-            "create_campaign": lambda args: _create_campaign(campaign_service, args),
-            "update_campaign": lambda args: _update_campaign(campaign_service, args),
-            "delete_campaign": lambda args: _delete_campaign(campaign_service, args),
+            "list_ad_accounts": partial(_list_ad_accounts, account_service),
+            "list_campaigns": partial(_list_campaigns, campaign_service),
+            "get_campaign": partial(_get_campaign, campaign_service),
+            "create_campaign": partial(_create_campaign, campaign_service),
+            "update_campaign": partial(_update_campaign, campaign_service),
+            "delete_campaign": partial(_delete_campaign, campaign_service),
         })
 
         logger.info(f"Registered {len(all_tools)} tools")
