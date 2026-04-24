@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 from src.types.config import MetaAdsConfig, ServerConfig
 
-load_dotenv()
+ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
+load_dotenv(ENV_PATH)
 
 
 def load_meta_config() -> MetaAdsConfig | None:
