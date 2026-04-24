@@ -94,6 +94,9 @@ def is_retriable_error(error: Exception) -> bool:
     if code and str(code).isdigit() and int(code) in RETRIABLE_ERROR_CODES:
         return True
     status = getattr(error, "http_status", None) or getattr(error, "status_code", None)
-    if status and int(status) in {429, 500, 502, 503, 504}:
-        return True
+    try:
+        if status and int(status) in {429, 500, 502, 503, 504}:
+            return True
+    except (ValueError, TypeError):
+        pass
     return False

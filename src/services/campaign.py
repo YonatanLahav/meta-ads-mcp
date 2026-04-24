@@ -59,10 +59,7 @@ class CampaignService(MetaAdsService):
         async def _create():
             try:
                 account = self.AdAccount(self.normalize_account_id(account_id))
-                result = account.create_campaign(
-                    fields=[Campaign.Field.id, Campaign.Field.name],
-                    params=data,
-                )
+                result = account.create_campaign(params=data)
                 logger.info(f"Campaign created: {result.get('id')}")
                 return dict(result)
             except Exception as e:

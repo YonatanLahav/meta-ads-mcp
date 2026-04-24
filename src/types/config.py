@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MetaAdsConfig(BaseModel):
+    model_config = ConfigDict(frozen=False)
+
     access_token: str
     api_version: str = "v21.0"
     app_id: str | None = None

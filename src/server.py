@@ -1,5 +1,6 @@
 import asyncio
 import json
+from typing import Any
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -17,7 +18,8 @@ def create_server() -> Server:
     meta_config = load_meta_config()
 
     all_tools = []
-    tool_handlers: dict[str, any] = {}
+    tool_handlers: dict[str, Any] = {}
+    token_valid = False
 
     if meta_config:
         valid_token = ensure_valid_token(
@@ -28,9 +30,11 @@ def create_server() -> Server:
         )
         if valid_token:
             meta_config.access_token = valid_token
+            token_valid = True
         else:
             logger.warning("Token invalid — tools will fail until a valid token is provided")
 
+    if meta_config and token_valid:
         from src.services.account import AccountService
         from src.services.campaign import CampaignService
         from src.tools.account import _list_ad_accounts
@@ -59,7 +63,7 @@ def create_server() -> Server:
 
         logger.info(f"Registered {len(all_tools)} tools")
     else:
-        logger.warning("No META_ACCESS_TOKEN found - server will start but tools will require configuration")
+        logger.warning("No valid token — server will start but tools will require configuration")
 
     @server.list_tools()
     async def list_tools():
@@ -67,17 +71,18 @@ def create_server() -> Server:
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-        if not meta_config:
+        if not token_valid:
+            error_msg = "Meta Ads MCP Server is not configured" if not meta_config else "Access token is invalid or expired"
             return [TextContent(
                 type="text",
                 text=json.dumps({
                     "success": False,
-                    "error": "Meta Ads MCP Server is not configured with an access token",
+                    "error": error_msg,
                     "help": {
                         "steps": [
-                            "1. Get a token from https://developers.facebook.com/tools/explorer/",
-                            "2. Request permissions: ads_management, ads_read, business_management",
-                            "3. Set META_ACCESS_TOKEN in your environment or Claude Desktop config",
+                            "1. Run 'python scripts/auth.py' to authenticate, OR",
+                            "2. Get a token from https://developers.facebook.com/tools/explorer/",
+                            "3. Set META_ACCESS_TOKEN in .env or Claude Desktop config",
                         ]
                     },
                 }, indent=2),
