@@ -2,12 +2,9 @@ import json
 import os
 import urllib.parse
 import urllib.request
-from pathlib import Path
 
+from src.config.settings import ENV_PATH
 from src.utils.logger import logger
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-ENV_PATH = PROJECT_ROOT / ".env"
 
 
 def validate_token(access_token: str, api_version: str) -> dict | None:

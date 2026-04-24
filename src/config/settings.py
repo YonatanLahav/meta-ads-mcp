@@ -3,8 +3,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 from src.types.config import MetaAdsConfig, ServerConfig
 
-ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
-load_dotenv(ENV_PATH)
+
+def _find_project_root() -> Path:
+    current = Path(__file__).resolve().parent
+    for _ in range(5):
+        if (current / "pyproject.toml").exists() or (current / ".env").exists():
+            return current
+        current = current.parent
+    return Path.cwd()
+
+
+ENV_PATH = _find_project_root() / ".env"
+load_dotenv(ENV_PATH, override=False)
 
 
 def load_meta_config() -> MetaAdsConfig | None:
