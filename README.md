@@ -4,14 +4,7 @@ An MCP (Model Context Protocol) server that lets AI assistants like Claude manag
 
 ## Features
 
-- **50+ MCP tools** covering the full Meta Ads campaign lifecycle
 - **Campaign management** — create, read, update, delete campaigns
-- **Ad sets & ads** — targeting, scheduling, bidding, creative assignment
-- **Creatives** — single image, video, carousel creation and management
-- **Audiences** — custom, lookalike, and saved audience management
-- **Insights** — performance analytics at campaign, ad set, and ad level
-- **Pixels & conversions** — tracking setup and custom conversion rules
-- **Batch operations** — bulk status and budget updates
 - **Automatic retry** with exponential backoff for transient errors
 - **Structured error handling** with Meta API error code mapping
 - **JSON logging** to stderr (won't interfere with MCP stdio transport)
@@ -111,25 +104,9 @@ src/
 │   └── config.py          # Pydantic models (MetaAdsConfig, ServerConfig)
 ├── services/
 │   ├── base.py            # Base service — SDK init, pagination helpers
-│   ├── campaign.py        # Campaign CRUD operations
-│   ├── adset.py           # Ad set management
-│   ├── ad.py              # Ad operations
-│   ├── creative.py        # Creative management
-│   ├── insights.py        # Analytics & reporting
-│   ├── audience.py        # Audience management
-│   ├── pixel.py           # Pixel & conversion tracking
-│   └── asset.py           # Media upload (images/videos)
+│   └── campaign.py        # Campaign CRUD operations
 ├── tools/
-│   ├── campaign.py        # Campaign tools (5 tools)
-│   ├── adset.py           # Ad set tools (6 tools)
-│   ├── ad.py              # Ad tools (5 tools)
-│   ├── account.py         # Account tools (4 tools)
-│   ├── creative.py        # Creative tools (8 tools)
-│   ├── insights.py        # Insights tools (6 tools)
-│   ├── audience.py        # Audience tools (7 tools)
-│   ├── pixel.py           # Pixel tools (5 tools)
-│   ├── budget.py          # Budget tools (2 tools)
-│   └── batch.py           # Batch tools (2 tools)
+│   └── campaign.py        # Campaign tool definitions + handlers
 └── utils/
     ├── logger.py          # Structured JSON logging to stderr
     ├── error_handler.py   # Meta API error classification & mapping
@@ -157,18 +134,18 @@ Claude Desktop (MCP client)
 
 ## Available Tools
 
-| Domain     | Tools                                                                 |
-|------------|-----------------------------------------------------------------------|
-| Campaigns  | list, get, create, update, delete                                     |
-| Ad Sets    | list, get, create, update, delete, duplicate                          |
-| Ads        | list, get, create, update, delete                                     |
-| Accounts   | list accounts, get account, list pages, list Instagram accounts       |
-| Creatives  | list, get, create (image/video/carousel), upload image/video, preview |
-| Insights   | campaign/adset/ad/account insights, conversions, comparison           |
-| Audiences  | list, get, create (custom/lookalike/saved), add/remove users          |
-| Pixels     | list, get, create pixel, list/create custom conversions               |
-| Budget     | update campaign budget, update ad set budget                          |
-| Batch      | batch update status, batch update budgets                             |
+| Domain     | Tools                             |
+|------------|-----------------------------------|
+| Campaigns  | list, get, create, update, delete |
+
+### Planned Features
+
+Additional tool domains are planned for future releases:
+- Ad sets, ads, and creatives management
+- Insights and analytics
+- Audience management
+- Pixel and conversion tracking
+- Batch operations
 
 ## Development
 

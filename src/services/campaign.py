@@ -36,7 +36,7 @@ class CampaignService(MetaAdsService):
                 if filtering:
                     params["filtering"] = filtering
                 cursor = account.get_campaigns(fields=fields or DEFAULT_FIELDS, params=params)
-                results = self.paginate_with_limit(cursor, limit)
+                results = await self.paginate_with_limit(cursor, limit)
                 logger.info(f"Fetched {len(results)} campaigns for {account_id}")
                 return [dict(c) for c in results]
             except Exception as e:

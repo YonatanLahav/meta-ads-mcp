@@ -6,7 +6,7 @@ from mcp.server.stdio import stdio_server
 from mcp.types import TextContent
 
 from src.config.settings import load_meta_config
-from src.tools.campaign import register_campaign_tools
+from src.tools.campaign import get_campaign_tool_defs
 from src.utils.logger import logger
 
 
@@ -18,10 +18,7 @@ def create_server() -> Server:
     tool_handlers: dict[str, any] = {}
 
     if meta_config:
-        campaign_service = __import__(
-            "src.services.campaign", fromlist=["CampaignService"]
-        ).CampaignService(meta_config)
-
+        from src.services.campaign import CampaignService
         from src.tools.campaign import (
             _list_campaigns,
             _get_campaign,
@@ -30,11 +27,9 @@ def create_server() -> Server:
             _delete_campaign,
         )
 
-        campaign_tools = register_campaign_tools.__wrapped__(meta_config) if hasattr(register_campaign_tools, "__wrapped__") else None
+        campaign_service = CampaignService(meta_config)
 
-        # Build tool list and handler map
-        tool_defs = _build_campaign_tool_defs()
-        all_tools.extend(tool_defs)
+        all_tools.extend(get_campaign_tool_defs())
 
         tool_handlers.update({
             "list_campaigns": lambda args: _list_campaigns(campaign_service, args),
@@ -82,75 +77,6 @@ def create_server() -> Server:
             return [TextContent(type="text", text=json.dumps(meta_error.to_dict(), indent=2))]
 
     return server
-
-
-def _build_campaign_tool_defs():
-    from mcp.types import Tool
-    return [
-        Tool(
-            name="list_campaigns",
-            description="List all campaigns for a Meta Ads account.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "account_id": {"type": "string", "description": "Meta Ads account ID (with or without 'act_' prefix)"},
-                    "limit": {"type": "integer", "description": "Max campaigns to return (default: 100)"},
-                    "status_filter": {"type": "string", "enum": ["ACTIVE", "PAUSED", "DELETED", "ARCHIVED"], "description": "Filter by status"},
-                },
-                "required": ["account_id"],
-            },
-        ),
-        Tool(
-            name="get_campaign",
-            description="Get detailed information about a specific campaign by ID.",
-            inputSchema={
-                "type": "object",
-                "properties": {"campaign_id": {"type": "string", "description": "The campaign ID"}},
-                "required": ["campaign_id"],
-            },
-        ),
-        Tool(
-            name="create_campaign",
-            description="Create a new Meta Ads campaign.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "account_id": {"type": "string", "description": "Meta Ads account ID"},
-                    "name": {"type": "string", "description": "Campaign name"},
-                    "objective": {"type": "string", "enum": ["OUTCOME_TRAFFIC", "OUTCOME_SALES", "OUTCOME_LEADS", "OUTCOME_AWARENESS", "OUTCOME_ENGAGEMENT", "OUTCOME_APP_PROMOTION"]},
-                    "status": {"type": "string", "enum": ["ACTIVE", "PAUSED"]},
-                    "daily_budget": {"type": "integer", "description": "Daily budget in cents"},
-                    "lifetime_budget": {"type": "integer", "description": "Lifetime budget in cents"},
-                    "special_ad_categories": {"type": "array", "items": {"type": "string", "enum": ["CREDIT", "EMPLOYMENT", "HOUSING"]}},
-                },
-                "required": ["account_id", "name", "objective"],
-            },
-        ),
-        Tool(
-            name="update_campaign",
-            description="Update an existing campaign.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "campaign_id": {"type": "string", "description": "Campaign ID to update"},
-                    "name": {"type": "string"},
-                    "status": {"type": "string", "enum": ["ACTIVE", "PAUSED", "ARCHIVED"]},
-                    "daily_budget": {"type": "integer"},
-                    "lifetime_budget": {"type": "integer"},
-                },
-                "required": ["campaign_id"],
-            },
-        ),
-        Tool(
-            name="delete_campaign",
-            description="Delete (archive) a campaign. Cannot be undone.",
-            inputSchema={
-                "type": "object",
-                "properties": {"campaign_id": {"type": "string", "description": "Campaign ID to delete"}},
-                "required": ["campaign_id"],
-            },
-        ),
-    ]
 
 
 async def run():

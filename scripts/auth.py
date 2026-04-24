@@ -26,6 +26,7 @@ from pathlib import Path
 REDIRECT_URI = "http://localhost:8888/callback"
 REDIRECT_PORT = 8888
 SCOPES = "ads_management,ads_read,business_management"
+API_VERSION = os.getenv("META_API_VERSION", "v21.0")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = PROJECT_ROOT / ".env"
@@ -67,7 +68,7 @@ def exchange_code_for_token(app_id: str, app_secret: str, code: str) -> str:
         "redirect_uri": REDIRECT_URI,
         "code": code,
     })
-    url = f"https://graph.facebook.com/v21.0/oauth/access_token?{params}"
+    url = f"https://graph.facebook.com/{API_VERSION}/oauth/access_token?{params}"
     with urllib.request.urlopen(url) as resp:
         data = json.loads(resp.read())
     return data["access_token"]
@@ -80,14 +81,14 @@ def exchange_for_long_lived_token(app_id: str, app_secret: str, short_token: str
         "client_secret": app_secret,
         "fb_exchange_token": short_token,
     })
-    url = f"https://graph.facebook.com/v21.0/oauth/access_token?{params}"
+    url = f"https://graph.facebook.com/{API_VERSION}/oauth/access_token?{params}"
     with urllib.request.urlopen(url) as resp:
         data = json.loads(resp.read())
     return data["access_token"]
 
 
 def verify_token(token: str) -> dict:
-    url = f"https://graph.facebook.com/v21.0/me?access_token={urllib.parse.quote(token)}"
+    url = f"https://graph.facebook.com/{API_VERSION}/me?access_token={urllib.parse.quote(token)}"
     with urllib.request.urlopen(url) as resp:
         return json.loads(resp.read())
 
@@ -140,7 +141,7 @@ def main():
         sys.exit(1)
 
     auth_url = (
-        f"https://www.facebook.com/v21.0/dialog/oauth?"
+        f"https://www.facebook.com/{API_VERSION}/dialog/oauth?"
         f"client_id={app_id}"
         f"&redirect_uri={urllib.parse.quote(REDIRECT_URI)}"
         f"&scope={SCOPES}"

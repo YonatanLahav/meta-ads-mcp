@@ -1,28 +1,10 @@
 import json
-from mcp.server import Server
 from mcp.types import Tool, TextContent
 
 from src.services.campaign import CampaignService
-from src.types.config import MetaAdsConfig
 
 
-def register_campaign_tools(server: Server, config: MetaAdsConfig):
-    service = CampaignService(config)
-
-    @server.call_tool()
-    async def handle_tool(name: str, arguments: dict) -> list[TextContent]:
-        if name == "list_campaigns":
-            return await _list_campaigns(service, arguments)
-        elif name == "get_campaign":
-            return await _get_campaign(service, arguments)
-        elif name == "create_campaign":
-            return await _create_campaign(service, arguments)
-        elif name == "update_campaign":
-            return await _update_campaign(service, arguments)
-        elif name == "delete_campaign":
-            return await _delete_campaign(service, arguments)
-        raise ValueError(f"Unknown tool: {name}")
-
+def get_campaign_tool_defs() -> list[Tool]:
     return [
         Tool(
             name="list_campaigns",
@@ -118,26 +100,47 @@ async def _list_campaigns(service: CampaignService, args: dict) -> list[TextCont
         limit=args.get("limit", 100),
         filtering=filtering,
     )
-    return [TextContent(type="text", text=json.dumps({"success": True, "count": len(campaigns), "campaigns": campaigns}, indent=2))]
+    return [TextContent(type="text", text=json.dumps({
+        "success": True,
+        "message": f"Found {len(campaigns)} campaigns",
+        "data": {"count": len(campaigns), "campaigns": campaigns},
+    }, indent=2))]
 
 
 async def _get_campaign(service: CampaignService, args: dict) -> list[TextContent]:
     campaign = await service.get_campaign(args["campaign_id"])
-    return [TextContent(type="text", text=json.dumps({"success": True, "campaign": campaign}, indent=2))]
+    return [TextContent(type="text", text=json.dumps({
+        "success": True,
+        "message": "Campaign retrieved",
+        "data": {"campaign": campaign},
+    }, indent=2))]
 
 
 async def _create_campaign(service: CampaignService, args: dict) -> list[TextContent]:
     data = {k: v for k, v in args.items() if k != "account_id"}
     campaign = await service.create_campaign(args["account_id"], data)
-    return [TextContent(type="text", text=json.dumps({"success": True, "message": "Campaign created", "campaign": campaign}, indent=2))]
+    return [TextContent(type="text", text=json.dumps({
+        "success": True,
+        "message": "Campaign created",
+        "data": {"campaign": campaign},
+    }, indent=2))]
 
 
 async def _update_campaign(service: CampaignService, args: dict) -> list[TextContent]:
-    campaign_id = args.pop("campaign_id")
-    result = await service.update_campaign(campaign_id, args)
-    return [TextContent(type="text", text=json.dumps({"success": True, "message": "Campaign updated", "result": result}, indent=2))]
+    campaign_id = args["campaign_id"]
+    update_data = {k: v for k, v in args.items() if k != "campaign_id"}
+    result = await service.update_campaign(campaign_id, update_data)
+    return [TextContent(type="text", text=json.dumps({
+        "success": True,
+        "message": "Campaign updated",
+        "data": {"campaign_id": campaign_id, "updated": True},
+    }, indent=2))]
 
 
 async def _delete_campaign(service: CampaignService, args: dict) -> list[TextContent]:
-    result = await service.delete_campaign(args["campaign_id"])
-    return [TextContent(type="text", text=json.dumps({"success": True, "message": "Campaign deleted", "result": result}, indent=2))]
+    await service.delete_campaign(args["campaign_id"])
+    return [TextContent(type="text", text=json.dumps({
+        "success": True,
+        "message": "Campaign deleted",
+        "data": {"campaign_id": args["campaign_id"], "deleted": True},
+    }, indent=2))]
