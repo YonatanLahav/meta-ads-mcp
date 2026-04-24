@@ -1,175 +1,148 @@
-# Meta Ads MCP Server (Python)
+# Meta Ads MCP Server
 
-An MCP (Model Context Protocol) server that lets AI assistants like Claude manage Meta (Facebook/Instagram) ad campaigns programmatically.
+An MCP server that gives Claude direct access to the Meta (Facebook/Instagram) Marketing API. Manage campaigns, analyze performance, and get insights — all through natural conversation.
 
-## Features
+## What You Can Do
 
-- **Campaign management** — create, read, update, delete campaigns
-- **Automatic retry** with exponential backoff for transient errors
-- **Structured error handling** with Meta API error code mapping
-- **JSON logging** to stderr (won't interfere with MCP stdio transport)
+**Campaign Management** — create, update, pause, and delete campaigns directly from Claude.
 
-## Prerequisites
+**Performance Analytics** — pull spend, impressions, clicks, conversions, CPA, ROAS, and more at any level (account, campaign, ad set, ad) with breakdowns by age, gender, country, device, and placement.
+
+**Example prompts:**
+- "Show me all active campaigns and their spend this week"
+- "Break down campaign X performance by country for the last 30 days"
+- "Pause all campaigns spending more than $100/day with CPA above $50"
+- "Compare last 7 days vs previous 7 days for my top campaigns"
+
+## Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_ad_accounts` | Discover accessible ad accounts |
+| `list_campaigns` | List campaigns with optional status filter |
+| `get_campaign` | Get campaign details |
+| `create_campaign` | Create a new campaign |
+| `update_campaign` | Update campaign name, status, or budget |
+| `delete_campaign` | Archive a campaign |
+| `get_account_insights` | Account performance by campaign/ad set/ad level |
+| `get_campaign_insights` | Campaign performance with optional breakdowns |
+| `get_adset_insights` | Ad set performance with optional breakdowns |
+| `get_ad_insights` | Ad performance with optional breakdowns |
+
+### Insights Options
+
+All insight tools support:
+- **Date presets**: `today`, `yesterday`, `last_7d`, `last_14d`, `last_30d`, `last_90d`, `this_month`, `last_month`
+- **Custom date range**: `{"since": "2024-01-01", "until": "2024-01-31"}`
+- **Breakdowns**: `age`, `gender`, `country`, `device_platform`, `publisher_platform`, `platform_position`
+
+## Quick Start
+
+### 1. Prerequisites
 
 - Python 3.11+
-- A Meta Developer account with a registered app
-- A Meta access token with `ads_management`, `ads_read`, and `business_management` permissions
+- A [Meta Developer](https://developers.facebook.com/apps/) app with **Facebook Login** enabled
+- `http://localhost:8888/callback` added to your app's **Valid OAuth Redirect URIs**
 
-## Setup
-
-### 1. Clone and create virtual environment
+### 2. Install
 
 ```bash
-cd meta-ads-mcp-server-python
+git clone https://github.com/YonatanLahav/meta-ads-mcp.git
+cd meta-ads-mcp
 python3 -m venv venv
-source venv/bin/activate   # macOS/Linux
-# venv\Scripts\activate    # Windows
-```
-
-### 2. Install dependencies
-
-```bash
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Configure environment
+### 3. Configure
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and add your Meta App credentials:
-
+Edit `.env`:
 ```
 META_APP_ID=your_app_id
 META_APP_SECRET=your_app_secret
-META_API_VERSION=v21.0
 ```
 
-To get App ID and App Secret:
-1. Go to [Meta Developer Apps](https://developers.facebook.com/apps/)
-2. Select your app (or create one)
-3. Go to **App Settings > Basic**
-4. Copy the App ID and App Secret into `.env`
+Get these from [Meta Developer Apps](https://developers.facebook.com/apps/) → your app → **App Settings > Basic**.
 
-Make sure your app has **Facebook Login** enabled and `http://localhost:8888/callback` is listed in **Valid OAuth Redirect URIs** (under Facebook Login > Settings).
-
-### 4. Authenticate via OAuth
+### 4. Authenticate
 
 ```bash
 python scripts/auth.py
 ```
 
-This will:
-1. Open your browser to Facebook's login/permissions page
-2. After you approve, catch the callback on `localhost:8888`
-3. Exchange the code for a **long-lived token** (valid 60 days)
-4. Save the token to `.env` automatically
+Opens your browser for OAuth. After approval, a 60-day token is saved to `.env` automatically. The server refreshes it silently on each startup.
 
-Run this again when the token expires.
+### 5. Add to Claude Desktop
 
-**Alternative (manual token):** If you prefer, you can skip the OAuth script and paste a token directly into `.env` as `META_ACCESS_TOKEN=your_token`. You can generate one at the [Graph API Explorer](https://developers.facebook.com/tools/explorer/).
-
-### 5. Configure for Claude Desktop
-
-Add this to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
 
 ```json
 {
   "mcpServers": {
     "meta-ads": {
-      "command": "/path/to/meta-ads-mcp-server-python/venv/bin/python",
+      "command": "/path/to/meta-ads-mcp/venv/bin/python",
       "args": ["-m", "src.server"],
-      "cwd": "/path/to/meta-ads-mcp-server-python",
-      "env": {
-        "META_ACCESS_TOKEN": "your_token_here"
-      }
+      "cwd": "/path/to/meta-ads-mcp"
     }
   }
 }
 ```
 
-Replace `/path/to/` with the actual path to the project directory.
+Replace `/path/to/` with the actual project path. Restart Claude Desktop.
 
-Claude Desktop will start and stop the server automatically — no need to keep it running manually.
+## How Auth Works
+
+1. **On startup** — validates your token and silently refreshes it for another 60 days
+2. **If expired** — tries silent refresh first; if that fails and you're running interactively, opens browser for OAuth automatically
+3. **If running as daemon** (Claude Desktop) — logs an error directing you to run `python scripts/auth.py` manually
+
+You should never need to re-authenticate unless 60+ days pass without starting the server, or you revoke the token.
 
 ## Project Structure
 
 ```
 src/
-├── server.py              # Entry point — creates MCP server, registers tools
+├── server.py              # Entry point — MCP server, tool routing
 ├── config/
-│   └── settings.py        # Loads config from environment variables
+│   └── settings.py        # Environment config loading
 ├── types/
-│   └── config.py          # Pydantic models (MetaAdsConfig)
+│   └── config.py          # Pydantic config models
 ├── services/
-│   ├── base.py            # Base service — SDK init, pagination, retry wrapper
+│   ├── base.py            # Base service — SDK init, pagination, retry
 │   ├── account.py         # Ad account operations
-│   ├── campaign.py        # Campaign CRUD operations
-│   └── insights.py        # Performance insights and analytics
+│   ├── campaign.py        # Campaign CRUD
+│   └── insights.py        # Performance insights
 ├── tools/
 │   ├── helpers.py         # Shared response formatting
-│   ├── account.py         # Account tool definitions + handlers
-│   ├── campaign.py        # Campaign tool definitions + handlers
-│   └── insights.py        # Insights tool definitions + handlers
+│   ├── account.py         # Account tool schemas + handlers
+│   ├── campaign.py        # Campaign tool schemas + handlers
+│   └── insights.py        # Insights tool schemas + handlers
 └── utils/
-    ├── logger.py          # Structured JSON logging to stderr
-    ├── error_handler.py   # Meta API error classification & mapping
+    ├── logger.py          # JSON logging to stderr
+    ├── error_handler.py   # Meta API error mapping
     ├── retry.py           # Exponential backoff with jitter
-    └── token_manager.py   # Token validation, refresh, and OAuth flow
+    └── token_manager.py   # Token validation, refresh, OAuth flow
 ```
-
-## Architecture
-
-```
-Claude Desktop (MCP client)
-        │
-        │ stdio (stdin/stdout)
-        ▼
-    server.py  ──  routes tool calls
-        │
-        ▼
-    tools/     ──  schema definitions + argument mapping
-        │
-        ▼
-    services/  ──  Meta Marketing API calls via facebook-business SDK
-        │
-        ▼
-    utils/     ──  retry, error handling, logging
-```
-
-## Available Tools
-
-| Domain     | Tools                                                   |
-|------------|---------------------------------------------------------|
-| Accounts   | list ad accounts                                        |
-| Campaigns  | list, get, create, update, delete                       |
-| Insights   | account insights, campaign insights, ad set insights, ad insights |
-
-Insights tools support date presets (`last_7d`, `last_30d`, etc.), custom date ranges, and breakdowns by age, gender, country, device, and placement.
-
-### Planned Features
-
-Additional tool domains are planned for future releases:
-- Ad set, ad, and creative management
-- Audience management
-- Budget optimization tools
-- Batch operations
 
 ## Development
 
 ```bash
 source venv/bin/activate
-
-# Run tests
-pytest
-
-# Lint
-ruff check src/
-
-# Format
-ruff format src/
+pytest                # run tests
+ruff check src/       # lint
+ruff format src/      # format
 ```
+
+## Planned Features
+
+- Ad set, ad, and creative management
+- Audience tools (custom audiences, targeting suggestions)
+- Budget optimization and pacing
+- Batch operations
 
 ## License
 
