@@ -42,7 +42,7 @@ def main():
         sys.exit(1)
 
     print("Starting OAuth flow...")
-    token = run_oauth_flow(app_id, app_secret, api_version)
+    token = run_oauth_flow(app_id, app_secret, api_version, require_tty=False)
 
     if not token:
         print("Authentication failed.")

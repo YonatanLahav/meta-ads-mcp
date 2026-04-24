@@ -145,8 +145,8 @@ def _exchange_for_long_lived_token(app_id: str, app_secret: str, short_token: st
     return data["access_token"]
 
 
-def run_oauth_flow(app_id: str, app_secret: str, api_version: str) -> str | None:
-    if not sys.stdin.isatty():
+def run_oauth_flow(app_id: str, app_secret: str, api_version: str, require_tty: bool = True) -> str | None:
+    if require_tty and not sys.stdin.isatty():
         logger.error(
             "Cannot run OAuth flow in non-interactive mode. "
             "Run 'python scripts/auth.py' from a terminal to authenticate."
