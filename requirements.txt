@@ -3,3 +3,4 @@ facebook-business>=20.0.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 python-dotenv>=1.0.0
+truststore>=0.8.0
