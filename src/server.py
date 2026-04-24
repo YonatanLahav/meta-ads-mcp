@@ -9,6 +9,7 @@ from src.config.settings import load_meta_config
 from src.tools.account import get_account_tool_defs
 from src.tools.campaign import get_campaign_tool_defs
 from src.utils.logger import logger
+from src.utils.token_manager import ensure_valid_token
 
 
 def create_server() -> Server:
@@ -19,6 +20,17 @@ def create_server() -> Server:
     tool_handlers: dict[str, any] = {}
 
     if meta_config:
+        valid_token = ensure_valid_token(
+            meta_config.access_token,
+            meta_config.app_id,
+            meta_config.app_secret,
+            meta_config.api_version,
+        )
+        if valid_token:
+            meta_config.access_token = valid_token
+        else:
+            logger.warning("Token invalid — tools will fail until a valid token is provided")
+
         from src.services.account import AccountService
         from src.services.campaign import CampaignService
         from src.tools.account import _list_ad_accounts
