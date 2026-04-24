@@ -1,0 +1,190 @@
+# Meta Ads MCP Server (Python)
+
+An MCP (Model Context Protocol) server that lets AI assistants like Claude manage Meta (Facebook/Instagram) ad campaigns programmatically.
+
+## Features
+
+- **50+ MCP tools** covering the full Meta Ads campaign lifecycle
+- **Campaign management** — create, read, update, delete campaigns
+- **Ad sets & ads** — targeting, scheduling, bidding, creative assignment
+- **Creatives** — single image, video, carousel creation and management
+- **Audiences** — custom, lookalike, and saved audience management
+- **Insights** — performance analytics at campaign, ad set, and ad level
+- **Pixels & conversions** — tracking setup and custom conversion rules
+- **Batch operations** — bulk status and budget updates
+- **Automatic retry** with exponential backoff for transient errors
+- **Structured error handling** with Meta API error code mapping
+- **JSON logging** to stderr (won't interfere with MCP stdio transport)
+
+## Prerequisites
+
+- Python 3.11+
+- A Meta Developer account with a registered app
+- A Meta access token with `ads_management`, `ads_read`, and `business_management` permissions
+
+## Setup
+
+### 1. Clone and create virtual environment
+
+```bash
+cd meta-ads-mcp-server-python
+python3 -m venv venv
+source venv/bin/activate   # macOS/Linux
+# venv\Scripts\activate    # Windows
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add your Meta App credentials:
+
+```
+META_APP_ID=your_app_id
+META_APP_SECRET=your_app_secret
+META_API_VERSION=v21.0
+```
+
+To get App ID and App Secret:
+1. Go to [Meta Developer Apps](https://developers.facebook.com/apps/)
+2. Select your app (or create one)
+3. Go to **App Settings > Basic**
+4. Copy the App ID and App Secret into `.env`
+
+Make sure your app has **Facebook Login** enabled and `http://localhost:8888/callback` is listed in **Valid OAuth Redirect URIs** (under Facebook Login > Settings).
+
+### 4. Authenticate via OAuth
+
+```bash
+python scripts/auth.py
+```
+
+This will:
+1. Open your browser to Facebook's login/permissions page
+2. After you approve, catch the callback on `localhost:8888`
+3. Exchange the code for a **long-lived token** (valid 60 days)
+4. Save the token to `.env` automatically
+
+Run this again when the token expires.
+
+**Alternative (manual token):** If you prefer, you can skip the OAuth script and paste a token directly into `.env` as `META_ACCESS_TOKEN=your_token`. You can generate one at the [Graph API Explorer](https://developers.facebook.com/tools/explorer/).
+
+### 5. Configure for Claude Desktop
+
+Add this to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "meta-ads": {
+      "command": "/path/to/meta-ads-mcp-server-python/venv/bin/python",
+      "args": ["-m", "src.server"],
+      "cwd": "/path/to/meta-ads-mcp-server-python",
+      "env": {
+        "META_ACCESS_TOKEN": "your_token_here"
+      }
+    }
+  }
+}
+```
+
+Replace `/path/to/` with the actual path to the project directory.
+
+Claude Desktop will start and stop the server automatically — no need to keep it running manually.
+
+## Project Structure
+
+```
+src/
+├── server.py              # Entry point — creates MCP server, registers tools
+├── config/
+│   └── settings.py        # Loads config from environment variables
+├── types/
+│   └── config.py          # Pydantic models (MetaAdsConfig, ServerConfig)
+├── services/
+│   ├── base.py            # Base service — SDK init, pagination helpers
+│   ├── campaign.py        # Campaign CRUD operations
+│   ├── adset.py           # Ad set management
+│   ├── ad.py              # Ad operations
+│   ├── creative.py        # Creative management
+│   ├── insights.py        # Analytics & reporting
+│   ├── audience.py        # Audience management
+│   ├── pixel.py           # Pixel & conversion tracking
+│   └── asset.py           # Media upload (images/videos)
+├── tools/
+│   ├── campaign.py        # Campaign tools (5 tools)
+│   ├── adset.py           # Ad set tools (6 tools)
+│   ├── ad.py              # Ad tools (5 tools)
+│   ├── account.py         # Account tools (4 tools)
+│   ├── creative.py        # Creative tools (8 tools)
+│   ├── insights.py        # Insights tools (6 tools)
+│   ├── audience.py        # Audience tools (7 tools)
+│   ├── pixel.py           # Pixel tools (5 tools)
+│   ├── budget.py          # Budget tools (2 tools)
+│   └── batch.py           # Batch tools (2 tools)
+└── utils/
+    ├── logger.py          # Structured JSON logging to stderr
+    ├── error_handler.py   # Meta API error classification & mapping
+    └── retry.py           # Exponential backoff with jitter
+```
+
+## Architecture
+
+```
+Claude Desktop (MCP client)
+        │
+        │ stdio (stdin/stdout)
+        ▼
+    server.py  ──  routes tool calls
+        │
+        ▼
+    tools/     ──  schema definitions + argument mapping
+        │
+        ▼
+    services/  ──  Meta Marketing API calls via facebook-business SDK
+        │
+        ▼
+    utils/     ──  retry, error handling, logging
+```
+
+## Available Tools
+
+| Domain     | Tools                                                                 |
+|------------|-----------------------------------------------------------------------|
+| Campaigns  | list, get, create, update, delete                                     |
+| Ad Sets    | list, get, create, update, delete, duplicate                          |
+| Ads        | list, get, create, update, delete                                     |
+| Accounts   | list accounts, get account, list pages, list Instagram accounts       |
+| Creatives  | list, get, create (image/video/carousel), upload image/video, preview |
+| Insights   | campaign/adset/ad/account insights, conversions, comparison           |
+| Audiences  | list, get, create (custom/lookalike/saved), add/remove users          |
+| Pixels     | list, get, create pixel, list/create custom conversions               |
+| Budget     | update campaign budget, update ad set budget                          |
+| Batch      | batch update status, batch update budgets                             |
+
+## Development
+
+```bash
+source venv/bin/activate
+
+# Run tests
+pytest
+
+# Lint
+ruff check src/
+
+# Format
+ruff format src/
+```
+
+## License
+
+MIT
