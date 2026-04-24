@@ -105,11 +105,13 @@ src/
 ├── services/
 │   ├── base.py            # Base service — SDK init, pagination, retry wrapper
 │   ├── account.py         # Ad account operations
-│   └── campaign.py        # Campaign CRUD operations
+│   ├── campaign.py        # Campaign CRUD operations
+│   └── insights.py        # Performance insights and analytics
 ├── tools/
 │   ├── helpers.py         # Shared response formatting
 │   ├── account.py         # Account tool definitions + handlers
-│   └── campaign.py        # Campaign tool definitions + handlers
+│   ├── campaign.py        # Campaign tool definitions + handlers
+│   └── insights.py        # Insights tool definitions + handlers
 └── utils/
     ├── logger.py          # Structured JSON logging to stderr
     ├── error_handler.py   # Meta API error classification & mapping
@@ -138,17 +140,20 @@ Claude Desktop (MCP client)
 
 ## Available Tools
 
-| Domain     | Tools                             |
-|------------|-----------------------------------|
-| Campaigns  | list, get, create, update, delete |
+| Domain     | Tools                                                   |
+|------------|---------------------------------------------------------|
+| Accounts   | list ad accounts                                        |
+| Campaigns  | list, get, create, update, delete                       |
+| Insights   | account insights, campaign insights, ad set insights, ad insights |
+
+Insights tools support date presets (`last_7d`, `last_30d`, etc.), custom date ranges, and breakdowns by age, gender, country, device, and placement.
 
 ### Planned Features
 
 Additional tool domains are planned for future releases:
-- Ad sets, ads, and creatives management
-- Insights and analytics
+- Ad set, ad, and creative management
 - Audience management
-- Pixel and conversion tracking
+- Budget optimization tools
 - Batch operations
 
 ## Development
