@@ -46,7 +46,7 @@ def create_server() -> Server:
             meta_config.api_version,
         )
         if valid_token:
-            meta_config.access_token = valid_token
+            meta_config = meta_config.model_copy(update={"access_token": valid_token})
             token_valid = True
         else:
             logger.warning("Token invalid — tools will fail until a valid token is provided")

@@ -100,7 +100,10 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
                 b"</body></html>"
             )
         elif "error" in params:
-            _CallbackHandler.error = params.get("error_description", params["error"])[0]
+            _CallbackHandler.error = (
+                params.get("error_description", [None])[0]
+                or params.get("error", ["Unknown error"])[0]
+            )
             self.send_response(400)
             self.send_header("Content-Type", "text/html")
             self.end_headers()
@@ -143,6 +146,13 @@ def _exchange_for_long_lived_token(app_id: str, app_secret: str, short_token: st
 
 
 def run_oauth_flow(app_id: str, app_secret: str, api_version: str) -> str | None:
+    if not sys.stdin.isatty():
+        logger.error(
+            "Cannot run OAuth flow in non-interactive mode. "
+            "Run 'python scripts/auth.py' from a terminal to authenticate."
+        )
+        return None
+
     _CallbackHandler.auth_code = None
     _CallbackHandler.error = None
 
