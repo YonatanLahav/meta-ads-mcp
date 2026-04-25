@@ -14,6 +14,7 @@ from mcp.server.stdio import stdio_server
 from mcp.types import TextContent
 
 from src.config.settings import load_meta_config
+from src.resources.accounts import get_account_resource_defs, read_accounts
 from src.services.account import AccountService
 from src.services.campaign import CampaignService
 from src.services.insights import InsightsService
@@ -44,7 +45,9 @@ def create_server() -> Server:
     meta_config = load_meta_config()
 
     all_tools: list = []
+    all_resources: list = []
     tool_handlers: dict[str, Any] = {}
+    resource_handlers: dict[str, Any] = {}
     token_valid = False
 
     if meta_config:
@@ -70,6 +73,12 @@ def create_server() -> Server:
         all_tools.extend(get_campaign_tool_defs())
         all_tools.extend(get_insights_tool_defs())
 
+        all_resources.extend(get_account_resource_defs())
+
+        resource_handlers.update({
+            "meta-ads://accounts": partial(read_accounts, account_service),
+        })
+
         tool_handlers.update({
             "list_ad_accounts": partial(_list_ad_accounts, account_service),
             "list_campaigns": partial(_list_campaigns, campaign_service),
@@ -83,9 +92,28 @@ def create_server() -> Server:
             "get_ad_insights": partial(_get_ad_insights, insights_service),
         })
 
-        logger.info(f"Registered {len(all_tools)} tools")
+        logger.info(f"Registered {len(all_tools)} tools, {len(all_resources)} resources")
     else:
         logger.warning("No valid token — server will start but tools will require configuration")
+
+    @server.list_resources()
+    async def list_resources():
+        return all_resources
+
+    @server.read_resource()
+    async def read_resource(uri):
+        if not token_valid:
+            raise ValueError("Meta Ads MCP Server is not configured — run 'python scripts/auth.py' to authenticate")
+
+        handler = resource_handlers.get(str(uri))
+        if not handler:
+            raise ValueError(f"Unknown resource: {uri}")
+
+        try:
+            return await handler()
+        except Exception as e:
+            logger.error(f"Resource read failed for {uri}: {e}")
+            raise
 
     @server.list_tools()
     async def list_tools():
