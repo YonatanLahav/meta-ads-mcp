@@ -5,15 +5,15 @@ from src.services.base import MetaAdsService, READ_COST
 from src.utils.logger import logger
 
 DEFAULT_FIELDS = [
-    CustomAudience.Field.id,
-    CustomAudience.Field.name,
-    CustomAudience.Field.description,
-    CustomAudience.Field.subtype,
-    CustomAudience.Field.approximate_count,
-    CustomAudience.Field.data_source,
-    CustomAudience.Field.status,
-    CustomAudience.Field.created_time,
-    CustomAudience.Field.updated_time,
+    "id",
+    "name",
+    "description",
+    "subtype",
+    "approximate_count_lower_bound",
+    "approximate_count_upper_bound",
+    "data_source",
+    "time_created",
+    "time_updated",
 ]
 
 
