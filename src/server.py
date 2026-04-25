@@ -16,16 +16,17 @@ from mcp.types import TextContent
 from src.config.settings import load_meta_config
 from src.resources.accounts import get_account_resource_defs, read_accounts
 from src.services.account import AccountService
+from src.services.ad import AdService
+from src.services.adset import AdSetService
 from src.services.campaign import CampaignService
 from src.services.insights import InsightsService
 from src.tools.account import get_account_tool_defs, _list_ad_accounts
+from src.tools.ad import get_ad_tool_defs, _list_ads, _get_ad
+from src.tools.adset import get_adset_tool_defs, _list_ad_sets, _get_ad_set
 from src.tools.campaign import (
-    get_campaign_tool_defs,
+    get_campaign_read_tool_defs,
     _list_campaigns,
     _get_campaign,
-    _create_campaign,
-    _update_campaign,
-    _delete_campaign,
 )
 from src.tools.insights import (
     get_insights_tool_defs,
@@ -67,10 +68,14 @@ def create_server() -> Server:
         rate_limiter = RateLimiter()
         account_service = AccountService(meta_config)
         campaign_service = CampaignService(meta_config, rate_limiter)
+        adset_service = AdSetService(meta_config, rate_limiter)
+        ad_service = AdService(meta_config, rate_limiter)
         insights_service = InsightsService(meta_config, rate_limiter)
 
         all_tools.extend(get_account_tool_defs())
-        all_tools.extend(get_campaign_tool_defs())
+        all_tools.extend(get_campaign_read_tool_defs())
+        all_tools.extend(get_adset_tool_defs())
+        all_tools.extend(get_ad_tool_defs())
         all_tools.extend(get_insights_tool_defs())
 
         all_resources.extend(get_account_resource_defs())
@@ -83,9 +88,10 @@ def create_server() -> Server:
             "list_ad_accounts": partial(_list_ad_accounts, account_service),
             "list_campaigns": partial(_list_campaigns, campaign_service),
             "get_campaign": partial(_get_campaign, campaign_service),
-            "create_campaign": partial(_create_campaign, campaign_service),
-            "update_campaign": partial(_update_campaign, campaign_service),
-            "delete_campaign": partial(_delete_campaign, campaign_service),
+            "list_ad_sets": partial(_list_ad_sets, adset_service),
+            "get_ad_set": partial(_get_ad_set, adset_service),
+            "list_ads": partial(_list_ads, ad_service),
+            "get_ad": partial(_get_ad, ad_service),
             "get_account_insights": partial(_get_account_insights, insights_service),
             "get_campaign_insights": partial(_get_campaign_insights, insights_service),
             "get_adset_insights": partial(_get_adset_insights, insights_service),

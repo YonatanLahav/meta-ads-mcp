@@ -3,6 +3,10 @@ from mcp.types import Tool, TextContent
 from src.tools.helpers import success_response, extract_args
 
 
+def get_campaign_read_tool_defs() -> list[Tool]:
+    return [t for t in get_campaign_tool_defs() if t.name in ("list_campaigns", "get_campaign")]
+
+
 def get_campaign_tool_defs() -> list[Tool]:
     return [
         Tool(
