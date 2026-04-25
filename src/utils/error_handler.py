@@ -65,7 +65,8 @@ def handle_meta_api_error(error: Exception) -> MetaAdsError:
     if isinstance(error, MetaAdsError):
         return error
 
-    message = str(error) or "Unknown error occurred"
+    raw_str = str(error)
+    message = raw_str if raw_str and raw_str != "None" else "Unknown error occurred"
     code: int | str = "UNKNOWN"
     error_type = type(error).__name__
     status_code = 500
@@ -82,18 +83,21 @@ def handle_meta_api_error(error: Exception) -> MetaAdsError:
         api_error = body.get("error", {}) if isinstance(body, dict) else {}
 
         if api_error:
-            message = api_error.get("message", message)
+            message = api_error.get("message") or message
             code = api_error.get("code", code)
             error_type = api_error.get("type", error_type)
             fbtrace_id = api_error.get("fbtrace_id")
             status_code = getattr(error, "http_status", status_code)
         elif hasattr(error, "api_error_message"):
-            message = error.api_error_message()
-        elif hasattr(error, "message"):
+            msg = error.api_error_message()
+            if msg:
+                message = msg
+        elif hasattr(error, "message") and error.message:
             message = error.message
     except Exception as parse_err:
         logger.error(f"Failed to parse Meta API error: {parse_err}")
-        message = str(error) or message
+        if raw_str and raw_str != "None":
+            message = raw_str
 
     logger.error(f"Meta API error: {message} (code={code}, type={error_type}, status={status_code})")
     return MetaAdsError(message, code, error_type, status_code, fbtrace_id)

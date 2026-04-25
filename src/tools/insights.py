@@ -22,6 +22,19 @@ TIME_RANGE_SCHEMA = {
     "required": ["since", "until"],
 }
 
+FIELDS_SCHEMA = {
+    "type": "array",
+    "items": {"type": "string"},
+    "description": (
+        "Specific metrics to return (reduces payload size). "
+        "Default: spend, impressions, clicks, cpc, cpm, ctr, reach, frequency, actions, cost_per_action_type, date_start, date_stop. "
+        "Other available fields: conversions, cost_per_conversion, purchase_roas, cost_per_unique_click, unique_clicks, unique_ctr, "
+        "outbound_clicks, cost_per_outbound_click, video_p25_watched_actions, video_p50_watched_actions, video_p75_watched_actions, "
+        "video_p100_watched_actions, website_purchase_roas, action_values, cost_per_action_type, inline_link_clicks, "
+        "inline_link_click_ctr, cpp, social_spend."
+    ),
+}
+
 
 def get_insights_tool_defs() -> list[Tool]:
     return [
@@ -37,6 +50,7 @@ def get_insights_tool_defs() -> list[Tool]:
                     "level": {"type": "string", "enum": ["account", "campaign", "adset", "ad"], "description": "Aggregation level (default: campaign)"},
                     "campaign_id": {"type": "string", "description": "Filter results to a specific campaign (recommended for adset/ad level)"},
                     "adset_id": {"type": "string", "description": "Filter results to a specific ad set (recommended for ad level)"},
+                    "fields": FIELDS_SCHEMA,
                     "limit": {"type": "integer", "description": "Max rows to return (default: 50)"},
                 },
                 "required": ["account_id"],
@@ -57,6 +71,7 @@ def get_insights_tool_defs() -> list[Tool]:
                         "items": {"type": "string", "enum": BREAKDOWN_ENUM},
                         "description": "Break down results by dimension (e.g. age, gender, country)",
                     },
+                    "fields": FIELDS_SCHEMA,
                     "limit": {"type": "integer", "description": "Max rows to return (default: 100)"},
                 },
                 "required": ["campaign_id"],
@@ -77,6 +92,7 @@ def get_insights_tool_defs() -> list[Tool]:
                         "items": {"type": "string", "enum": BREAKDOWN_ENUM},
                         "description": "Break down results by dimension (e.g. age, gender, country)",
                     },
+                    "fields": FIELDS_SCHEMA,
                     "limit": {"type": "integer", "description": "Max rows to return (default: 100)"},
                 },
                 "required": ["adset_id"],
@@ -97,6 +113,7 @@ def get_insights_tool_defs() -> list[Tool]:
                         "items": {"type": "string", "enum": BREAKDOWN_ENUM},
                         "description": "Break down results by dimension (e.g. age, gender, country)",
                     },
+                    "fields": FIELDS_SCHEMA,
                     "limit": {"type": "integer", "description": "Max rows to return (default: 100)"},
                 },
                 "required": ["ad_id"],
@@ -117,6 +134,7 @@ async def _get_account_insights(service, args: dict) -> list[TextContent]:
         time_range=args.get("time_range"),
         level=args.get("level", "campaign"),
         filtering=filtering or None,
+        fields=args.get("fields"),
         limit=args.get("limit", 50),
     )
     return success_response(f"Retrieved {len(insights)} insight rows", {"count": len(insights), "insights": insights})
@@ -129,6 +147,7 @@ async def _get_campaign_insights(service, args: dict) -> list[TextContent]:
         time_range=args.get("time_range"),
         breakdowns=args.get("breakdowns"),
         account_id=args.get("account_id"),
+        fields=args.get("fields"),
         limit=args.get("limit", 100),
     )
     return success_response(f"Retrieved {len(insights)} insight rows", {"count": len(insights), "insights": insights})
@@ -141,6 +160,7 @@ async def _get_adset_insights(service, args: dict) -> list[TextContent]:
         time_range=args.get("time_range"),
         breakdowns=args.get("breakdowns"),
         account_id=args.get("account_id"),
+        fields=args.get("fields"),
         limit=args.get("limit", 100),
     )
     return success_response(f"Retrieved {len(insights)} insight rows", {"count": len(insights), "insights": insights})
@@ -153,6 +173,7 @@ async def _get_ad_insights(service, args: dict) -> list[TextContent]:
         time_range=args.get("time_range"),
         breakdowns=args.get("breakdowns"),
         account_id=args.get("account_id"),
+        fields=args.get("fields"),
         limit=args.get("limit", 100),
     )
     return success_response(f"Retrieved {len(insights)} insight rows", {"count": len(insights), "insights": insights})

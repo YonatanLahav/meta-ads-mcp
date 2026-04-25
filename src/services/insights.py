@@ -37,6 +37,7 @@ class InsightsService(MetaAdsService):
         time_range: dict | None = None,
         level: str = "campaign",
         filtering: list[dict] | None = None,
+        fields: list[str] | None = None,
         limit: int = 50,
     ) -> list[dict]:
         async def _op():
@@ -48,7 +49,7 @@ class InsightsService(MetaAdsService):
                 params["date_preset"] = date_preset
             if filtering:
                 params["filtering"] = filtering
-            cursor = account.get_insights(fields=DEFAULT_FIELDS, params=params)
+            cursor = account.get_insights(fields=fields or DEFAULT_FIELDS, params=params)
             results = await self.paginate_with_limit(cursor, limit)
             logger.debug(f"Fetched {len(results)} insight rows for account {account_id}")
             return [dict(r) for r in results]
@@ -62,6 +63,7 @@ class InsightsService(MetaAdsService):
         time_range: dict | None = None,
         breakdowns: list[str] | None = None,
         account_id: str | None = None,
+        fields: list[str] | None = None,
         limit: int = 100,
     ) -> list[dict]:
         async def _op():
@@ -73,7 +75,7 @@ class InsightsService(MetaAdsService):
                 params["date_preset"] = date_preset
             if breakdowns:
                 params["breakdowns"] = breakdowns
-            cursor = campaign.get_insights(fields=DEFAULT_FIELDS, params=params)
+            cursor = campaign.get_insights(fields=fields or DEFAULT_FIELDS, params=params)
             results = await self.paginate_with_limit(cursor, limit)
             logger.debug(f"Fetched {len(results)} insight rows for campaign {campaign_id}")
             return [dict(r) for r in results]
@@ -87,6 +89,7 @@ class InsightsService(MetaAdsService):
         time_range: dict | None = None,
         breakdowns: list[str] | None = None,
         account_id: str | None = None,
+        fields: list[str] | None = None,
         limit: int = 100,
     ) -> list[dict]:
         async def _op():
@@ -98,7 +101,7 @@ class InsightsService(MetaAdsService):
                 params["date_preset"] = date_preset
             if breakdowns:
                 params["breakdowns"] = breakdowns
-            cursor = adset.get_insights(fields=DEFAULT_FIELDS, params=params)
+            cursor = adset.get_insights(fields=fields or DEFAULT_FIELDS, params=params)
             results = await self.paginate_with_limit(cursor, limit)
             logger.debug(f"Fetched {len(results)} insight rows for ad set {adset_id}")
             return [dict(r) for r in results]
@@ -112,6 +115,7 @@ class InsightsService(MetaAdsService):
         time_range: dict | None = None,
         breakdowns: list[str] | None = None,
         account_id: str | None = None,
+        fields: list[str] | None = None,
         limit: int = 100,
     ) -> list[dict]:
         async def _op():
@@ -123,7 +127,7 @@ class InsightsService(MetaAdsService):
                 params["date_preset"] = date_preset
             if breakdowns:
                 params["breakdowns"] = breakdowns
-            cursor = ad.get_insights(fields=DEFAULT_FIELDS, params=params)
+            cursor = ad.get_insights(fields=fields or DEFAULT_FIELDS, params=params)
             results = await self.paginate_with_limit(cursor, limit)
             logger.debug(f"Fetched {len(results)} insight rows for ad {ad_id}")
             return [dict(r) for r in results]

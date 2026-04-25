@@ -16,8 +16,6 @@ DEFAULT_CREATIVE_FIELDS = [
     "call_to_action_type",
     "object_story_spec",
     "status",
-    "created_time",
-    "updated_time",
 ]
 
 DEFAULT_IMAGE_FIELDS = [
