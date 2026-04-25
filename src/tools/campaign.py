@@ -99,7 +99,7 @@ def get_campaign_tool_defs() -> list[Tool]:
 async def _list_campaigns(service, args: dict) -> list[TextContent]:
     filtering = None
     if args.get("status_filter"):
-        filtering = [{"field": "status", "operator": "IN", "value": [args["status_filter"]]}]
+        filtering = [{"field": "effective_status", "operator": "IN", "value": [args["status_filter"]]}]
     campaigns = await service.get_campaigns(
         account_id=args["account_id"],
         limit=args.get("limit", 100),

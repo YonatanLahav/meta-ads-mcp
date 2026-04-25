@@ -5,14 +5,15 @@ from src.services.base import MetaAdsService, READ_COST
 from src.utils.logger import logger
 
 DEFAULT_FIELDS = [
-    Ad.Field.id,
-    Ad.Field.name,
-    Ad.Field.adset_id,
-    Ad.Field.campaign_id,
-    Ad.Field.status,
-    Ad.Field.creative,
-    Ad.Field.created_time,
-    Ad.Field.updated_time,
+    "id",
+    "name",
+    "adset_id",
+    "campaign_id",
+    "status",
+    "effective_status",
+    "creative",
+    "created_time",
+    "updated_time",
 ]
 
 

@@ -5,14 +5,14 @@ from src.services.base import MetaAdsService
 from src.utils.logger import logger
 
 DEFAULT_FIELDS = [
-    AdAccount.Field.id,
-    AdAccount.Field.name,
-    AdAccount.Field.account_id,
-    AdAccount.Field.account_status,
-    AdAccount.Field.currency,
-    AdAccount.Field.timezone_name,
-    AdAccount.Field.amount_spent,
-    AdAccount.Field.balance,
+    "id",
+    "name",
+    "account_id",
+    "account_status",
+    "currency",
+    "timezone_name",
+    "amount_spent",
+    "balance",
 ]
 
 

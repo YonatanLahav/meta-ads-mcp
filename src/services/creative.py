@@ -7,28 +7,28 @@ from src.services.base import MetaAdsService, READ_COST
 from src.utils.logger import logger
 
 DEFAULT_CREATIVE_FIELDS = [
-    AdCreative.Field.id,
-    AdCreative.Field.name,
-    AdCreative.Field.title,
-    AdCreative.Field.body,
-    AdCreative.Field.image_url,
-    AdCreative.Field.image_hash,
-    AdCreative.Field.call_to_action_type,
-    AdCreative.Field.object_story_spec,
-    AdCreative.Field.status,
+    "id",
+    "name",
+    "title",
+    "body",
+    "image_url",
+    "image_hash",
+    "call_to_action_type",
+    "object_story_spec",
+    "status",
     "created_time",
     "updated_time",
 ]
 
 DEFAULT_IMAGE_FIELDS = [
-    AdImage.Field.id,
-    AdImage.Field.hash,
-    AdImage.Field.url,
-    AdImage.Field.url_128,
-    AdImage.Field.width,
-    AdImage.Field.height,
-    AdImage.Field.created_time,
-    AdImage.Field.status,
+    "id",
+    "hash",
+    "url",
+    "url_128",
+    "width",
+    "height",
+    "created_time",
+    "status",
 ]
 
 

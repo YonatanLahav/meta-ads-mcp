@@ -45,7 +45,7 @@ async def _list_ads(service, args: dict) -> list[TextContent]:
     if args.get("campaign_id"):
         filtering.append({"field": "campaign.id", "operator": "EQUAL", "value": args["campaign_id"]})
     if args.get("status_filter"):
-        filtering.append({"field": "status", "operator": "IN", "value": [args["status_filter"]]})
+        filtering.append({"field": "effective_status", "operator": "IN", "value": [args["status_filter"]]})
     ads = await service.get_ads(
         account_id=args["account_id"],
         limit=args.get("limit", 100),
