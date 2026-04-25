@@ -36,7 +36,8 @@ class InsightsService(MetaAdsService):
         date_preset: str = "last_7d",
         time_range: dict | None = None,
         level: str = "campaign",
-        limit: int = 100,
+        filtering: list[dict] | None = None,
+        limit: int = 50,
     ) -> list[dict]:
         async def _op():
             account = AdAccount(self.normalize_account_id(account_id))
@@ -45,6 +46,8 @@ class InsightsService(MetaAdsService):
                 params["time_range"] = time_range
             else:
                 params["date_preset"] = date_preset
+            if filtering:
+                params["filtering"] = filtering
             cursor = account.get_insights(fields=DEFAULT_FIELDS, params=params)
             results = await self.paginate_with_limit(cursor, limit)
             logger.debug(f"Fetched {len(results)} insight rows for account {account_id}")

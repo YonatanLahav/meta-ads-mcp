@@ -27,7 +27,7 @@ def get_insights_tool_defs() -> list[Tool]:
     return [
         Tool(
             name="get_account_insights",
-            description="Get performance insights for an ad account. Returns spend, impressions, clicks, conversions, CPA, and more. Use 'level' to aggregate by campaign, ad set, or ad.",
+            description="Get performance insights for an ad account. Returns spend, impressions, clicks, conversions, CPA, and more. Use 'level' to aggregate by campaign, ad set, or ad. IMPORTANT: For adset or ad level, always provide campaign_id to avoid timeouts on large accounts.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -35,7 +35,9 @@ def get_insights_tool_defs() -> list[Tool]:
                     "date_preset": {"type": "string", "enum": DATE_PRESET_ENUM, "description": "Predefined date range (default: last_7d). Cannot be used with time_range."},
                     "time_range": {**TIME_RANGE_SCHEMA, "description": "Custom date range. Cannot be used with date_preset."},
                     "level": {"type": "string", "enum": ["account", "campaign", "adset", "ad"], "description": "Aggregation level (default: campaign)"},
-                    "limit": {"type": "integer", "description": "Max rows to return (default: 100)"},
+                    "campaign_id": {"type": "string", "description": "Filter results to a specific campaign (recommended for adset/ad level)"},
+                    "adset_id": {"type": "string", "description": "Filter results to a specific ad set (recommended for ad level)"},
+                    "limit": {"type": "integer", "description": "Max rows to return (default: 50)"},
                 },
                 "required": ["account_id"],
             },
@@ -101,12 +103,18 @@ def get_insights_tool_defs() -> list[Tool]:
 
 
 async def _get_account_insights(service, args: dict) -> list[TextContent]:
+    filtering = []
+    if args.get("campaign_id"):
+        filtering.append({"field": "campaign.id", "operator": "EQUAL", "value": args["campaign_id"]})
+    if args.get("adset_id"):
+        filtering.append({"field": "adset.id", "operator": "EQUAL", "value": args["adset_id"]})
     insights = await service.get_account_insights(
         account_id=args["account_id"],
         date_preset=args.get("date_preset", "last_7d"),
         time_range=args.get("time_range"),
         level=args.get("level", "campaign"),
-        limit=args.get("limit", 100),
+        filtering=filtering or None,
+        limit=args.get("limit", 50),
     )
     return success_response(f"Retrieved {len(insights)} insight rows", {"count": len(insights), "insights": insights})
 
