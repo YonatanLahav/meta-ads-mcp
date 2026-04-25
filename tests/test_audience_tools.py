@@ -9,11 +9,11 @@ from src.tools.audience import _list_custom_audiences, _get_custom_audience
 def mock_service():
     service = AsyncMock()
     service.get_custom_audiences.return_value = [
-        {"id": "1", "name": "Purchasers", "subtype": "CUSTOM", "approximate_count": 50000},
-        {"id": "2", "name": "Lookalike 1%", "subtype": "LOOKALIKE", "approximate_count": 2000000},
+        {"id": "1", "name": "Purchasers", "subtype": "CUSTOM", "approximate_count_lower_bound": 45000, "approximate_count_upper_bound": 55000},
+        {"id": "2", "name": "Lookalike 1%", "subtype": "LOOKALIKE", "approximate_count_lower_bound": 1800000, "approximate_count_upper_bound": 2200000},
     ]
     service.get_custom_audience.return_value = {
-        "id": "1", "name": "Purchasers", "subtype": "CUSTOM", "approximate_count": 50000,
+        "id": "1", "name": "Purchasers", "subtype": "CUSTOM", "approximate_count_lower_bound": 45000, "approximate_count_upper_bound": 55000,
     }
     return service
 

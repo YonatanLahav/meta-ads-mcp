@@ -61,6 +61,7 @@ class InsightsService(MetaAdsService):
         date_preset: str = "last_7d",
         time_range: dict | None = None,
         breakdowns: list[str] | None = None,
+        account_id: str | None = None,
         limit: int = 100,
     ) -> list[dict]:
         async def _op():
@@ -77,7 +78,7 @@ class InsightsService(MetaAdsService):
             logger.debug(f"Fetched {len(results)} insight rows for campaign {campaign_id}")
             return [dict(r) for r in results]
 
-        return await self._execute(_op)
+        return await self._execute(_op, account_id=account_id, cost=READ_COST)
 
     async def get_adset_insights(
         self,
@@ -85,6 +86,7 @@ class InsightsService(MetaAdsService):
         date_preset: str = "last_7d",
         time_range: dict | None = None,
         breakdowns: list[str] | None = None,
+        account_id: str | None = None,
         limit: int = 100,
     ) -> list[dict]:
         async def _op():
@@ -101,7 +103,7 @@ class InsightsService(MetaAdsService):
             logger.debug(f"Fetched {len(results)} insight rows for ad set {adset_id}")
             return [dict(r) for r in results]
 
-        return await self._execute(_op)
+        return await self._execute(_op, account_id=account_id, cost=READ_COST)
 
     async def get_ad_insights(
         self,
@@ -109,6 +111,7 @@ class InsightsService(MetaAdsService):
         date_preset: str = "last_7d",
         time_range: dict | None = None,
         breakdowns: list[str] | None = None,
+        account_id: str | None = None,
         limit: int = 100,
     ) -> list[dict]:
         async def _op():
@@ -125,4 +128,4 @@ class InsightsService(MetaAdsService):
             logger.debug(f"Fetched {len(results)} insight rows for ad {ad_id}")
             return [dict(r) for r in results]
 
-        return await self._execute(_op)
+        return await self._execute(_op, account_id=account_id, cost=READ_COST)

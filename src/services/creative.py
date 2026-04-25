@@ -16,8 +16,8 @@ DEFAULT_CREATIVE_FIELDS = [
     AdCreative.Field.call_to_action_type,
     AdCreative.Field.object_story_spec,
     AdCreative.Field.status,
-    AdCreative.Field.created_time,
-    AdCreative.Field.updated_time,
+    "created_time",
+    "updated_time",
 ]
 
 DEFAULT_IMAGE_FIELDS = [

@@ -49,6 +49,7 @@ def get_insights_tool_defs() -> list[Tool]:
                 "type": "object",
                 "properties": {
                     "campaign_id": {"type": "string", "description": "Campaign ID"},
+                    "account_id": {"type": "string", "description": "Meta Ads account ID (for rate limiting; optional)"},
                     "date_preset": {"type": "string", "enum": DATE_PRESET_ENUM, "description": "Predefined date range (default: last_7d). Cannot be used with time_range."},
                     "time_range": {**TIME_RANGE_SCHEMA, "description": "Custom date range. Cannot be used with date_preset."},
                     "breakdowns": {
@@ -68,6 +69,7 @@ def get_insights_tool_defs() -> list[Tool]:
                 "type": "object",
                 "properties": {
                     "adset_id": {"type": "string", "description": "Ad set ID"},
+                    "account_id": {"type": "string", "description": "Meta Ads account ID (for rate limiting; optional)"},
                     "date_preset": {"type": "string", "enum": DATE_PRESET_ENUM, "description": "Predefined date range (default: last_7d). Cannot be used with time_range."},
                     "time_range": {**TIME_RANGE_SCHEMA, "description": "Custom date range. Cannot be used with date_preset."},
                     "breakdowns": {
@@ -87,6 +89,7 @@ def get_insights_tool_defs() -> list[Tool]:
                 "type": "object",
                 "properties": {
                     "ad_id": {"type": "string", "description": "Ad ID"},
+                    "account_id": {"type": "string", "description": "Meta Ads account ID (for rate limiting; optional)"},
                     "date_preset": {"type": "string", "enum": DATE_PRESET_ENUM, "description": "Predefined date range (default: last_7d). Cannot be used with time_range."},
                     "time_range": {**TIME_RANGE_SCHEMA, "description": "Custom date range. Cannot be used with date_preset."},
                     "breakdowns": {
@@ -125,6 +128,7 @@ async def _get_campaign_insights(service, args: dict) -> list[TextContent]:
         date_preset=args.get("date_preset", "last_7d"),
         time_range=args.get("time_range"),
         breakdowns=args.get("breakdowns"),
+        account_id=args.get("account_id"),
         limit=args.get("limit", 100),
     )
     return success_response(f"Retrieved {len(insights)} insight rows", {"count": len(insights), "insights": insights})
@@ -136,6 +140,7 @@ async def _get_adset_insights(service, args: dict) -> list[TextContent]:
         date_preset=args.get("date_preset", "last_7d"),
         time_range=args.get("time_range"),
         breakdowns=args.get("breakdowns"),
+        account_id=args.get("account_id"),
         limit=args.get("limit", 100),
     )
     return success_response(f"Retrieved {len(insights)} insight rows", {"count": len(insights), "insights": insights})
@@ -147,6 +152,7 @@ async def _get_ad_insights(service, args: dict) -> list[TextContent]:
         date_preset=args.get("date_preset", "last_7d"),
         time_range=args.get("time_range"),
         breakdowns=args.get("breakdowns"),
+        account_id=args.get("account_id"),
         limit=args.get("limit", 100),
     )
     return success_response(f"Retrieved {len(insights)} insight rows", {"count": len(insights), "insights": insights})
