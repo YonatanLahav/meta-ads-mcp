@@ -4,14 +4,17 @@ An MCP server that gives Claude direct access to the Meta (Facebook/Instagram) M
 
 ## What You Can Do
 
-**Campaign Management** — create, update, pause, and delete campaigns directly from Claude.
+**Browse the full ad hierarchy** — list and inspect accounts, campaigns, ad sets, and ads with filtering by status or parent object.
 
 **Performance Analytics** — pull spend, impressions, clicks, conversions, CPA, ROAS, and more at any level (account, campaign, ad set, ad) with breakdowns by age, gender, country, device, and placement.
+
+**MCP Resources** — ad account data is available as context without explicit tool calls, so Claude already knows your accounts when the conversation starts.
 
 **Example prompts:**
 - "Show me all active campaigns and their spend this week"
 - "Break down campaign X performance by country for the last 30 days"
-- "Pause all campaigns spending more than $100/day with CPA above $50"
+- "List all ad sets under campaign X that are paused"
+- "What ads are running in ad set Y?"
 - "Compare last 7 days vs previous 7 days for my top campaigns"
 
 ## Available Tools
@@ -21,13 +24,20 @@ An MCP server that gives Claude direct access to the Meta (Facebook/Instagram) M
 | `list_ad_accounts` | Discover accessible ad accounts |
 | `list_campaigns` | List campaigns with optional status filter |
 | `get_campaign` | Get campaign details |
-| `create_campaign` | Create a new campaign |
-| `update_campaign` | Update campaign name, status, or budget |
-| `delete_campaign` | Archive a campaign |
+| `list_ad_sets` | List ad sets with optional campaign/status filter |
+| `get_ad_set` | Get ad set details (targeting, budget, schedule) |
+| `list_ads` | List ads with optional ad set/campaign/status filter |
+| `get_ad` | Get ad details (creative, status, parent IDs) |
 | `get_account_insights` | Account performance by campaign/ad set/ad level |
 | `get_campaign_insights` | Campaign performance with optional breakdowns |
 | `get_adset_insights` | Ad set performance with optional breakdowns |
 | `get_ad_insights` | Ad performance with optional breakdowns |
+
+### Resources
+
+| Resource | URI | Description |
+|----------|-----|-------------|
+| Ad Accounts | `meta-ads://accounts` | All accessible ad accounts with status, currency, and spend |
 
 ### Insights Options
 
@@ -115,15 +125,22 @@ src/
 │   ├── base.py            # Base service — SDK init, pagination, retry
 │   ├── account.py         # Ad account operations
 │   ├── campaign.py        # Campaign CRUD
+│   ├── adset.py           # Ad set read operations
+│   ├── ad.py              # Ad read operations
 │   └── insights.py        # Performance insights
+├── resources/
+│   └── accounts.py        # MCP resource for ad accounts
 ├── tools/
 │   ├── helpers.py         # Shared response formatting
 │   ├── account.py         # Account tool schemas + handlers
 │   ├── campaign.py        # Campaign tool schemas + handlers
+│   ├── adset.py           # Ad set tool schemas + handlers
+│   ├── ad.py              # Ad tool schemas + handlers
 │   └── insights.py        # Insights tool schemas + handlers
 └── utils/
     ├── logger.py          # JSON logging to stderr
     ├── error_handler.py   # Meta API error mapping
+    ├── rate_limiter.py    # Per-account proactive rate limiting
     ├── retry.py           # Exponential backoff with jitter
     └── token_manager.py   # Token validation, refresh, OAuth flow
 ```
@@ -139,9 +156,9 @@ ruff format src/      # format
 
 ## Planned Features
 
-- Ad set, ad, and creative management
-- Audience tools (custom audiences, targeting suggestions)
-- Budget optimization and pacing
+- Creative management (ad creatives, image/video assets)
+- Audience tools (custom audiences, lookalikes, targeting suggestions)
+- Campaign/ad set/ad write operations (create, update, pause, delete)
 - Batch operations
 
 ## License
