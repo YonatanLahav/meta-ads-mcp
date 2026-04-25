@@ -11,6 +11,7 @@ DEFAULT_FIELDS = [
     "subtype",
     "approximate_count_lower_bound",
     "approximate_count_upper_bound",
+    "operation_status",
     "data_source",
     "time_created",
     "time_updated",
