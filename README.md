@@ -6,7 +6,9 @@ An MCP server that gives Claude direct access to the Meta (Facebook/Instagram) M
 
 **Browse the full ad hierarchy** — list and inspect accounts, campaigns, ad sets, and ads with filtering by status or parent object.
 
-**Performance Analytics** — pull spend, impressions, clicks, conversions, CPA, ROAS, and more at any level (account, campaign, ad set, ad) with breakdowns by age, gender, country, device, and placement.
+**Creative and audience visibility** — view ad creatives (headline, body, images, CTAs), preview how ads render in different placements, browse uploaded images, and inspect custom/lookalike audiences with their sizes.
+
+**Performance Analytics** — pull spend, impressions, clicks, conversions, CPA, ROAS, and more at any level (account, campaign, ad set, ad) with breakdowns by age, gender, country, device, and placement. Scope insights by campaign or ad set to avoid timeouts on large accounts.
 
 **MCP Resources** — ad account data is available as context without explicit tool calls, so Claude already knows your accounts when the conversation starts.
 
@@ -15,6 +17,9 @@ An MCP server that gives Claude direct access to the Meta (Facebook/Instagram) M
 - "Break down campaign X performance by country for the last 30 days"
 - "List all ad sets under campaign X that are paused"
 - "What ads are running in ad set Y?"
+- "Show me the creatives for campaign X"
+- "What custom audiences do I have and how large are they?"
+- "Preview how ad Z looks on Instagram"
 - "Compare last 7 days vs previous 7 days for my top campaigns"
 
 ## Available Tools
@@ -28,7 +33,13 @@ An MCP server that gives Claude direct access to the Meta (Facebook/Instagram) M
 | `get_ad_set` | Get ad set details (targeting, budget, schedule) |
 | `list_ads` | List ads with optional ad set/campaign/status filter |
 | `get_ad` | Get ad details (creative, status, parent IDs) |
-| `get_account_insights` | Account performance by campaign/ad set/ad level |
+| `list_ad_creatives` | List ad creatives (headline, body, image, CTA) |
+| `get_ad_creative` | Get full creative details including object story spec |
+| `get_ad_preview` | HTML preview of an ad in a specific placement |
+| `list_ad_images` | List uploaded images with URLs and dimensions |
+| `list_custom_audiences` | List custom/lookalike audiences with size |
+| `get_custom_audience` | Get audience details (subtype, data source, rules) |
+| `get_account_insights` | Account performance with campaign/adset scoping |
 | `get_campaign_insights` | Campaign performance with optional breakdowns |
 | `get_adset_insights` | Ad set performance with optional breakdowns |
 | `get_ad_insights` | Ad performance with optional breakdowns |
@@ -127,6 +138,8 @@ src/
 │   ├── campaign.py        # Campaign CRUD
 │   ├── adset.py           # Ad set read operations
 │   ├── ad.py              # Ad read operations
+│   ├── creative.py        # Creative and image read operations
+│   ├── audience.py        # Custom audience read operations
 │   └── insights.py        # Performance insights
 ├── resources/
 │   └── accounts.py        # MCP resource for ad accounts
@@ -136,6 +149,8 @@ src/
 │   ├── campaign.py        # Campaign tool schemas + handlers
 │   ├── adset.py           # Ad set tool schemas + handlers
 │   ├── ad.py              # Ad tool schemas + handlers
+│   ├── creative.py        # Creative, preview, and image tool schemas + handlers
+│   ├── audience.py        # Audience tool schemas + handlers
 │   └── insights.py        # Insights tool schemas + handlers
 └── utils/
     ├── logger.py          # JSON logging to stderr
@@ -156,9 +171,9 @@ ruff format src/      # format
 
 ## Planned Features
 
-- Creative management (ad creatives, image/video assets)
-- Audience tools (custom audiences, lookalikes, targeting suggestions)
 - Campaign/ad set/ad write operations (create, update, pause, delete)
+- Targeting search (interests, behaviors, demographics)
+- Reach estimation for targeting specs
 - Batch operations
 
 ## License
