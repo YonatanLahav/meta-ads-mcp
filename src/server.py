@@ -35,6 +35,7 @@ from src.tools.insights import (
 )
 from src.utils.error_handler import handle_meta_api_error
 from src.utils.logger import logger
+from src.utils.rate_limiter import RateLimiter
 from src.utils.token_manager import ensure_valid_token
 
 
@@ -60,9 +61,10 @@ def create_server() -> Server:
             logger.warning("Token invalid — tools will fail until a valid token is provided")
 
     if meta_config and token_valid:
+        rate_limiter = RateLimiter()
         account_service = AccountService(meta_config)
-        campaign_service = CampaignService(meta_config)
-        insights_service = InsightsService(meta_config)
+        campaign_service = CampaignService(meta_config, rate_limiter)
+        insights_service = InsightsService(meta_config, rate_limiter)
 
         all_tools.extend(get_account_tool_defs())
         all_tools.extend(get_campaign_tool_defs())

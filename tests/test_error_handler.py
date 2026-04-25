@@ -3,10 +3,25 @@ from src.utils.error_handler import (
     handle_meta_api_error,
     is_retriable_error,
     RETRIABLE_ERROR_CODES,
+    RATE_LIMIT_ERROR_CODES,
 )
 
 
 class TestMetaAdsError:
+    def test_is_rate_limit_with_rate_limit_code(self):
+        for code in RATE_LIMIT_ERROR_CODES:
+            err = MetaAdsError("test", code=code)
+            assert err.is_rate_limit is True
+
+    def test_is_not_rate_limit_with_server_error(self):
+        err = MetaAdsError("test", code=100, status_code=500)
+        assert err.is_rate_limit is False
+
+    def test_is_not_rate_limit_with_normal_code(self):
+        for code in [100, 190, 200, 368]:
+            err = MetaAdsError("test", code=code, status_code=400)
+            assert err.is_rate_limit is False
+
     def test_is_retriable_with_retriable_code(self):
         for code in RETRIABLE_ERROR_CODES:
             err = MetaAdsError("test", code=code)
@@ -21,6 +36,16 @@ class TestMetaAdsError:
         for status in [429, 500, 502, 503, 504]:
             err = MetaAdsError("test", code=100, status_code=status)
             assert err.is_retriable is True
+
+    def test_server_error_is_retriable_but_not_rate_limit(self):
+        err = MetaAdsError("test", code=100, status_code=502)
+        assert err.is_retriable is True
+        assert err.is_rate_limit is False
+
+    def test_http_429_is_rate_limit_even_without_known_code(self):
+        err = MetaAdsError("throttled", code="UNKNOWN", status_code=429)
+        assert err.is_rate_limit is True
+        assert err.is_retriable is True
 
     def test_to_dict(self):
         err = MetaAdsError("bad request", code=100, error_type="OAuthException", status_code=400)

@@ -68,6 +68,7 @@ def get_campaign_tool_defs() -> list[Tool]:
                 "type": "object",
                 "properties": {
                     "campaign_id": {"type": "string", "description": "Campaign ID to update"},
+                    "account_id": {"type": "string", "description": "Meta Ads account ID (for rate limiting; optional)"},
                     "name": {"type": "string", "description": "New name"},
                     "status": {"type": "string", "enum": ["ACTIVE", "PAUSED", "ARCHIVED"]},
                     "daily_budget": {"type": "integer", "description": "New daily budget in cents"},
@@ -83,6 +84,7 @@ def get_campaign_tool_defs() -> list[Tool]:
                 "type": "object",
                 "properties": {
                     "campaign_id": {"type": "string", "description": "Campaign ID to delete"},
+                    "account_id": {"type": "string", "description": "Meta Ads account ID (for rate limiting; optional)"},
                 },
                 "required": ["campaign_id"],
             },
@@ -114,11 +116,13 @@ async def _create_campaign(service, args: dict) -> list[TextContent]:
 
 async def _update_campaign(service, args: dict) -> list[TextContent]:
     campaign_id = args["campaign_id"]
-    await service.update_campaign(campaign_id, extract_args(args, ["campaign_id"]))
+    account_id = args.get("account_id")
+    await service.update_campaign(campaign_id, extract_args(args, ["campaign_id", "account_id"]), account_id=account_id)
     return success_response("Campaign updated", {"campaign_id": campaign_id, "updated": True})
 
 
 async def _delete_campaign(service, args: dict) -> list[TextContent]:
     campaign_id = args["campaign_id"]
-    await service.delete_campaign(campaign_id)
+    account_id = args.get("account_id")
+    await service.delete_campaign(campaign_id, account_id=account_id)
     return success_response("Campaign deleted", {"campaign_id": campaign_id, "deleted": True})

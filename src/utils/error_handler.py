@@ -1,5 +1,6 @@
 from src.utils.logger import logger
 
+RATE_LIMIT_ERROR_CODES = {4, 17, 80004, 613}
 RETRIABLE_ERROR_CODES = {4, 17, 80004, 613}
 RETRIABLE_HTTP_STATUSES = {429, 500, 502, 503, 504}
 
@@ -36,9 +37,13 @@ class MetaAdsError(Exception):
         self.fbtrace_id = fbtrace_id
 
     @property
-    def is_retriable(self) -> bool:
+    def is_rate_limit(self) -> bool:
         code = int(self.code) if str(self.code).isdigit() else -1
-        if code in RETRIABLE_ERROR_CODES:
+        return code in RATE_LIMIT_ERROR_CODES or self.status_code == 429
+
+    @property
+    def is_retriable(self) -> bool:
+        if self.is_rate_limit:
             return True
         if self.status_code in RETRIABLE_HTTP_STATUSES:
             return True

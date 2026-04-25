@@ -1,7 +1,7 @@
 from facebook_business.adobjects.adaccount import AdAccount
 from facebook_business.adobjects.campaign import Campaign
 
-from src.services.base import MetaAdsService
+from src.services.base import MetaAdsService, READ_COST, WRITE_COST
 from src.utils.logger import logger
 
 DEFAULT_FIELDS = [
@@ -33,14 +33,14 @@ class CampaignService(MetaAdsService):
             logger.debug(f"Fetched {len(results)} campaigns for account {account_id}")
             return [dict(c) for c in results]
 
-        return await self._execute(_op)
+        return await self._execute(_op, account_id=account_id, cost=READ_COST)
 
-    async def get_campaign(self, campaign_id: str) -> dict:
+    async def get_campaign(self, campaign_id: str, account_id: str | None = None) -> dict:
         async def _op():
             campaign = Campaign(campaign_id)
             return dict(campaign.api_get(fields=DEFAULT_FIELDS))
 
-        return await self._execute(_op)
+        return await self._execute(_op, account_id=account_id, cost=READ_COST)
 
     async def create_campaign(self, account_id: str, data: dict) -> dict:
         async def _op():
@@ -49,22 +49,22 @@ class CampaignService(MetaAdsService):
             logger.debug(f"Campaign created: {result.get('id')}")
             return dict(result)
 
-        return await self._execute(_op)
+        return await self._execute(_op, account_id=account_id, cost=WRITE_COST)
 
-    async def update_campaign(self, campaign_id: str, updates: dict) -> dict:
+    async def update_campaign(self, campaign_id: str, updates: dict, account_id: str | None = None) -> dict:
         async def _op():
             campaign = Campaign(campaign_id)
             campaign.api_update(params=updates)
             logger.debug(f"Campaign updated: {campaign_id}")
             return {"id": campaign_id, "updated": True}
 
-        return await self._execute(_op)
+        return await self._execute(_op, account_id=account_id, cost=WRITE_COST)
 
-    async def delete_campaign(self, campaign_id: str) -> dict:
+    async def delete_campaign(self, campaign_id: str, account_id: str | None = None) -> dict:
         async def _op():
             campaign = Campaign(campaign_id)
             campaign.api_delete()
             logger.debug(f"Campaign deleted: {campaign_id}")
             return {"id": campaign_id, "deleted": True}
 
-        return await self._execute(_op)
+        return await self._execute(_op, account_id=account_id, cost=WRITE_COST)

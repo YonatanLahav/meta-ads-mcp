@@ -4,7 +4,7 @@ from facebook_business.adobjects.adset import AdSet
 from facebook_business.adobjects.ad import Ad
 from facebook_business.adobjects.adsinsights import AdsInsights
 
-from src.services.base import MetaAdsService
+from src.services.base import MetaAdsService, READ_COST
 from src.utils.logger import logger
 
 DEFAULT_FIELDS = [
@@ -50,7 +50,7 @@ class InsightsService(MetaAdsService):
             logger.debug(f"Fetched {len(results)} insight rows for account {account_id}")
             return [dict(r) for r in results]
 
-        return await self._execute(_op)
+        return await self._execute(_op, account_id=account_id, cost=READ_COST)
 
     async def get_campaign_insights(
         self,
